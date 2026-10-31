@@ -2,12 +2,21 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from ..models import User
-from ..extensions import db
+from ..extensions import db, limiter
 from .forms import LoginForm, RegisterForm, ChangePasswordForm
+from urllib.parse import urlparse, urljoin
+
 
 auth_bp = Blueprint("auth", __name__)
 
-@auth_bp.route("/login", methods =["GET", "POST"])
+
+def _is_safe_url(target: str) -> bool:
+    ref_url  = urlparse(request.host_url)
+    test_url = urlparse(urljoin(request.host_url, target))
+    return test_url.scheme in ("http", "https") and ref_url.netloc == test_url.netloc
+
+@auth_bp.route("/login", methods=["GET", "POST"])
+@limiter.limit("10 per minute")
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("hotels.index"))
@@ -18,7 +27,9 @@ def login():
         if user and check_password_hash(user.password_hash, form.password.data):
             login_user(user, remember=form.remember.data)
             next_page = request.args.get("next")
-            return redirect(next_page or url_for('hotels.index'))
+            if next_page and not _is_safe_url(next_page):
+                next_page = None
+            return redirect(next_page or url_for("hotels.index"))
         flash("Email hoặc mật khẩu không đúng.", "danger")
     return render_template("auth/login.html", form=form)
 

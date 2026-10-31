@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [ dev, main ]
+  pull_request:
+    branches: [ dev, main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check import toàn bộ app
+        run: python -c "from app import create_app; app = create_app('testing'); print('Import OK')"
+        env:
+          FLASK_ENV: testing
+          SECRET_KEY: ci-secret-key
+          JWT_SECRET_KEY: ci-jwt-secret-key
+          DB_HOST: localhost
+          DB_PORT: 1433
+          DB_NAME: hotel_db
+          DB_USER: sa
+          DB_PASSWORD: ci-password
+
+      - name: Run pytest
+        run: pytest --tb=short
+        env:
+          FLASK_ENV: testing
+          SECRET_KEY: ci-secret-key
+          JWT_SECRET_KEY: ci-jwt-secret-key

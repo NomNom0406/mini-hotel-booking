@@ -5,15 +5,23 @@ from flask_wtf.csrf import CSRFProtect
 from flask_jwt_extended import JWTManager
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from sqlalchemy import MetaData
 
-db           = SQLAlchemy()
-migrate      = Migrate()
+NAMING_CONVENTION = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
+db            = SQLAlchemy(metadata=MetaData(naming_convention=NAMING_CONVENTION))
+migrate       = Migrate()
 login_manager = LoginManager()
-csrf         = CSRFProtect()
-jwt          = JWTManager()
-limiter      = Limiter(key_func=get_remote_address)
+csrf          = CSRFProtect()
+jwt           = JWTManager()
+limiter       = Limiter(key_func=get_remote_address)
 
-# Cấu hình login_manager
-login_manager.login_view = "auth.login"
-login_manager.login_message = "Vui lòng đăng nhập để tiếp tục."
+login_manager.login_view         = "auth.login"
+login_manager.login_message      = "Vui lòng đăng nhập để tiếp tục."
 login_manager.login_message_category = "warning"

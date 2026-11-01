@@ -1,13 +1,13 @@
 # Models sẽ được khai báo ở Bước 2
 # Import ở đây để Flask-Migrate nhận biết khi migrate
-from datetime import datetime, date
+from datetime import datetime
 from flask_login import UserMixin
 from sqlalchemy import (
     Column, Integer, String, UnicodeText, Boolean, DateTime, Date, Numeric,
-    ForeignKey, Enum, Text, UniqueConstraint
+    ForeignKey, Enum, UniqueConstraint, CheckConstraint, Index
 )
 from sqlalchemy.orm import relationship
-from .extensions import  db, login_manager
+from .extensions import db, login_manager
 
 # Bảng nối Many-to-Many: Hotel ↔ Amenity (cascade xóa theo hotel)
 hotel_amenities = db.Table(
@@ -74,6 +74,12 @@ class Hotel(db.Model):
     map_url = Column(String(500), nullable=True)
     is_active      = Column(Boolean, nullable=False, default=True)
     created_at     = Column(DateTime, nullable=False, default=datetime.utcnow)
+    __table_args__ = (
+        UniqueConstraint("name", name="uq_hotels_name"),
+        CheckConstraint(star_rating.between(1, 5), name="star_rating_range"),
+        Index("ix_hotels_province", "province"),
+    )
+
     room_types = relationship("RoomType", back_populates="hotel", lazy="dynamic")
     rooms      = relationship("Room",     back_populates="hotel", lazy="dynamic")
     amenities  = relationship("Amenity",  secondary=hotel_amenities, lazy="subquery")
@@ -92,6 +98,12 @@ class RoomType(db.Model):
     base_price     = Column(Numeric(12, 2),   nullable=False)
     capacity       = Column(Integer, nullable=False, default=2)
     image_filename = Column(String(255),      nullable=True)
+    __table_args__ = (
+        UniqueConstraint("hotel_id", "name", name="uq_room_types_hotel_name"),
+        CheckConstraint(base_price > 0, name="base_price_positive"),
+        CheckConstraint(capacity >= 1, name="capacity_min"),
+    )
+
     amenities      = relationship("Amenity",  secondary=room_type_amenities, lazy="subquery")
     hotel = relationship("Hotel", back_populates="room_types")
     rooms = relationship("Room",  back_populates="room_type", lazy="dynamic")
@@ -101,6 +113,7 @@ class RoomType(db.Model):
 
 # Room  (khóa lạc quan bằng version)
 class Room(db.Model):
+
     __tablename__ = "rooms"
 
     id           = Column(Integer, primary_key=True)
@@ -109,7 +122,8 @@ class Room(db.Model):
     floor        = Column(Integer,     nullable=False, default=1)
     room_type_id = Column(Integer, ForeignKey("room_types.id"),  nullable=False)
     is_active    = Column(Boolean, nullable=False, default=True)
-    version      = Column(Integer, nullable=False, default=0)   # khóa lạc quan
+    version      = Column(Integer, nullable=False, server_default="1")  # khóa lạc quan
+    __mapper_args__ = {"version_id_col": version}
 
     __table_args__ = (
         UniqueConstraint("hotel_id", "room_number", name="uq_hotel_room_number"),
@@ -147,6 +161,13 @@ class Booking(db.Model):
     created_at    = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at    = Column(DateTime, nullable=False, default=datetime.utcnow,
                         onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint(check_out > check_in, name="checkout_after_checkin"),
+        CheckConstraint(guests > 0, name="guests_positive"),
+        Index("ix_bookings_room_dates", "room_id", "check_in", "check_out"),
+        Index("ix_bookings_status", "status"),
+    )
 
     user = relationship("User", back_populates="bookings")
     room = relationship("Room", back_populates="bookings")

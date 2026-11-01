@@ -46,16 +46,8 @@ class BookingStep2Form(FlaskForm):
 
 
 class BookingStep3Form(FlaskForm):
-    hotel_id    = HiddenField(validators=[DataRequired(message="Thiếu thông tin khách sạn.")])
-    room_id     = HiddenField(validators=[DataRequired(message="Thiếu thông tin phòng.")])
-    check_in    = HiddenField(validators=[DataRequired(message="Thiếu ngày nhận phòng.")])
-    check_out   = HiddenField(validators=[DataRequired(message="Thiếu ngày trả phòng.")])
-    guests      = HiddenField(validators=[DataRequired(message="Thiếu số khách.")])
-    guest_name  = HiddenField(validators=[DataRequired(message="Thiếu họ tên khách.")])
-    guest_phone = HiddenField(validators=[DataRequired(message="Thiếu số điện thoại.")])
-    guest_email = HiddenField(validators=[DataRequired(message="Thiếu email.")])
-    note        = HiddenField()
-    submit      = SubmitField("Đặt phòng")
+    """Form xác nhận — chỉ cần CSRF token, data lấy từ session."""
+    submit = SubmitField("Đặt phòng")
 
 
 class CancelBookingForm(FlaskForm):

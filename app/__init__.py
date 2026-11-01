@@ -41,8 +41,8 @@ def _register_blueprints(app: Flask) -> None:
     from .api.routes      import api_bp
 
     app.register_blueprint(auth_bp,     url_prefix="/auth")
-    app.register_blueprint(hotels_bp,   url_prefix="/hotels")
+    app.register_blueprint(hotels_bp,   url_prefix="")
     app.register_blueprint(rooms_bp,    url_prefix="/rooms")
-    app.register_blueprint(bookings_bp, url_prefix="/bookings")
+    app.register_blueprint(bookings_bp, url_prefix="")
     app.register_blueprint(admin_bp,    url_prefix="/admin")
     app.register_blueprint(api_bp,      url_prefix="/api")

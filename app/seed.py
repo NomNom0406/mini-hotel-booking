@@ -1,13 +1,75 @@
 import random
-import string
-from datetime import date
+from datetime import date, datetime, time, timedelta
+
+import click
+from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
 from .extensions import db
 from .models import User, Hotel, RoomType, Room, Amenity, Booking
 
 
-def _random_code(n=8):
-    return "BK" + "".join(random.choices(string.digits, k=n))
+# Số phòng theo số loại phòng: mỗi khách sạn có 7–8 phòng (pipeline: 5–10)
+_ROOMS_PLAN = {2: [4, 3], 3: [3, 3, 2], 4: [3, 2, 2, 1]}
+
+# (trạng thái, số lượng, khoảng ngày nhận so với hôm nay): tổng 28 booking
+_BOOKING_PLAN = [
+    ("Completed", 12, (-150, -10)),
+    ("Confirmed", 6, (2, 40)),     # 2 booking đầu của nhóm này đang ở, xem bên dưới
+    ("Pending", 6, (3, 45)),
+    ("Cancelled", 4, (-60, 40)),
+]
+
+
+def _seed_bookings(customers):
+    """25–30 booking trong ~6 tháng, đủ 4 trạng thái, không trùng lịch."""
+    if not customers or Booking.query.count() > 0:
+        return
+    rng = random.Random(2026)  # cố định để seed cho kết quả ổn định
+    rooms = Room.query.filter_by(is_active=True).order_by(Room.id).all()
+    today = date.today()
+    taken = {}  # room_id -> [(ngày nhận, ngày trả)] của booking giữ phòng
+    seq = 0
+
+    for status, count, (lo, hi) in _BOOKING_PLAN:
+        for i in range(count):
+            for _ in range(50):
+                room = rng.choice(rooms)
+                nights = rng.randint(1, 4)
+                if status == "Confirmed" and i < 2:
+                    # đang ở hôm nay: để thẻ "công suất hôm nay" có số liệu
+                    ci, nights = today - timedelta(days=1 + i), 3 + i
+                else:
+                    ci = today + timedelta(days=rng.randint(lo, hi))
+                co = ci + timedelta(days=nights)
+                if status != "Cancelled" and any(
+                    ci < e and co > s for s, e in taken.get(room.id, [])
+                ):
+                    continue  # trùng lịch, thử phòng khác
+                break
+            else:
+                continue  # 50 lần đều trùng thì bỏ booking này
+
+            if status != "Cancelled":
+                taken.setdefault(room.id, []).append((ci, co))
+
+            customer = customers[seq % len(customers)]
+            created_day = min(ci - timedelta(days=rng.randint(3, 20)),
+                              today - timedelta(days=rng.randint(0, 2)))
+            created_at = datetime.combine(created_day, time(10, 0))
+            seq += 1
+            db.session.add(Booking(
+                code=f"BK{ci:%Y%m%d}{seq:03d}",
+                user_id=customer.id, room_id=room.id,
+                check_in=ci, check_out=co,
+                guests=rng.randint(1, room.room_type.capacity),
+                guest_name=customer.full_name,
+                guest_phone=customer.phone,
+                guest_email=customer.email,
+                total_price=room.room_type.base_price * nights,
+                status=status,
+                cancel_reason=("Khách thay đổi kế hoạch" if status == "Cancelled" else None),
+                created_at=created_at, updated_at=created_at,
+            ))
 
 
 def _get_or_create_amenity(name, icon):
@@ -39,8 +101,13 @@ def run_seed():
         ("Phòng gia đình",        "bi-people"),
         ("Bể sục",                "bi-water"),
     ]
+    # Pipeline: 6–8 tiện nghi
+    keep = {"WiFi miễn phí", "Lễ tân 24 giờ", "Bãi đỗ xe miễn phí", "Hồ bơi",
+            "Nhà hàng", "Spa", "Phòng gym", "Bữa sáng"}
     amenity_objs = {}
     for name, icon in amenity_defs:
+        if name not in keep:
+            continue
         amenity_objs[name] = _get_or_create_amenity(name, icon)
     db.session.flush()
 
@@ -55,8 +122,9 @@ def run_seed():
         ("Lễ tân Nguyễn",     "receptionist@hotel.com", "0900000002", "receptionist"),
         ("Khách Trần Văn A",  "customer1@hotel.com",    "0900000003", "customer"),
         ("Khách Lê Thị B",    "customer2@hotel.com",    "0900000004", "customer"),
+        ("Khách Phạm Văn C",  "customer3@hotel.com",    "0900000005", "customer"),
     ]
-    customer = None
+    customers = []
     for full_name, email, phone, role in users_data:
         u = User.query.filter_by(email=email).first()
         if not u:
@@ -66,7 +134,7 @@ def run_seed():
             )
             db.session.add(u)
         if role == "customer":
-            customer = u
+            customers.append(u)
     db.session.flush()
 
     # ------------------------------------------------------------------ #
@@ -523,8 +591,9 @@ def run_seed():
         db.session.add(h)
         db.session.flush()
 
-        floor_counter = 1
-        for rtd in hd["room_types"]:
+        types = hd["room_types"][:4]  # pipeline: 2–4 loại phòng
+        plan = _ROOMS_PLAN[len(types)]
+        for idx, rtd in enumerate(types, start=1):
             rt = RoomType(
                 hotel_id=h.id, name=rtd["name"],
                 base_price=rtd["base_price"], capacity=rtd["capacity"],
@@ -535,33 +604,17 @@ def run_seed():
             db.session.add(rt)
             db.session.flush()
 
-            for floor in range(1, rtd["floors"] + 1):
-                for num in range(1, rtd["rooms_per_floor"] + 1):
-                    room_number = f"{floor_counter}{floor:01d}{num:02d}"
-                    r = Room(
-                        hotel_id=h.id, room_number=room_number,
-                        floor=floor, room_type_id=rt.id, is_active=True,
-                    )
-                    db.session.add(r)
-            floor_counter += 1
+            for num in range(1, plan[idx - 1] + 1):
+                db.session.add(Room(
+                    hotel_id=h.id, room_number=f"{idx}{num:02d}",
+                    floor=idx, room_type_id=rt.id, is_active=True,
+                ))
         db.session.flush()
 
     # ------------------------------------------------------------------ #
     # 5. BOOKING MẪU                                                       #
     # ------------------------------------------------------------------ #
-    if Booking.query.count() == 0:
-        room = Room.query.first()
-        if room and customer:
-            b = Booking(
-                code=_random_code(),
-                user_id=customer.id, room_id=room.id,
-                check_in=date(2026, 11, 10), check_out=date(2026, 11, 12),
-                guests=2, guest_name=customer.full_name,
-                guest_phone="0900000003", guest_email=customer.email,
-                total_price=room.room_type.base_price * 2,
-                status="Pending",
-            )
-            db.session.add(b)
+    _seed_bookings(customers)
 
     db.session.commit()
     print("[seed] Hoàn thành!")
@@ -570,3 +623,11 @@ def run_seed():
     print(f"  Rooms:     {Room.query.count()}")
     print(f"  Users:     {User.query.count()}")
     print(f"  Bookings:  {Booking.query.count()}")
+
+
+
+@click.command("seed")
+@with_appcontext
+def seed_command():
+    """Nạp dữ liệu demo (chạy lại không nhân đôi dữ liệu)."""
+    run_seed()

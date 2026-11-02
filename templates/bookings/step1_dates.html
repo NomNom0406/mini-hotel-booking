@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros/form_field.html" import render_field %}
+
+{% block title %}Đặt phòng – Chọn ngày{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <ol class="list-inline text-muted small mb-3">
+            <li class="list-inline-item fw-bold text-primary">1. Chọn ngày</li>
+            <li class="list-inline-item">›</li>
+            <li class="list-inline-item">2. Thông tin khách</li>
+            <li class="list-inline-item">›</li>
+            <li class="list-inline-item">3. Xác nhận</li>
+        </ol>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-body">
+                <h1 class="h5 mb-1">{{ room.hotel.name }}</h1>
+                <p class="mb-0 text-muted">
+                    Phòng {{ room.room_number }} · {{ room.room_type.name }} ·
+                    tối đa {{ room.room_type.capacity }} khách ·
+                    {{ "{:,.0f}".format(room.room_type.base_price) }} ₫/đêm
+                </p>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    <div class="row">
+                        <div class="col-12 col-md-6">{{ render_field(form.check_in) }}</div>
+                        <div class="col-12 col-md-6">{{ render_field(form.check_out) }}</div>
+                    </div>
+                    {{ render_field(form.guests, min=1, max=room.room_type.capacity) }}
+                    <div class="d-flex justify-content-between">
+                        <a class="btn btn-outline-secondary"
+                           href="{{ url_for('hotels.detail', hotel_id=room.hotel_id) }}">Quay lại</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

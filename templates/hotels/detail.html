@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}{{ hotel.name }}{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+    <div class="col-12 col-lg-5">
+        {% if hotel.image_filename %}
+        <img src="{{ url_for('static', filename='uploads/' ~ hotel.image_filename) }}"
+             class="img-fluid rounded" alt="{{ hotel.name }}">
+        {% else %}
+        <div class="bg-light rounded d-flex align-items-center justify-content-center fs-1"
+             style="height: 260px;">🏨</div>
+        {% endif %}
+    </div>
+    <div class="col-12 col-lg-7">
+        <h1 class="h3">{{ hotel.name }}</h1>
+        <p class="text-warning mb-1" aria-label="{{ hotel.star_rating }} sao">{{ '★' * hotel.star_rating }}</p>
+        <p class="text-muted mb-2">📍 {{ hotel.address }}, {{ hotel.province }}</p>
+        {% if hotel.description %}<p>{{ hotel.description }}</p>{% endif %}
+        {% if hotel.amenities %}
+        <p class="mb-0">
+            {% for a in hotel.amenities %}
+            <span class="badge text-bg-light border">{{ a.name }}</span>
+            {% endfor %}
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<form method="get" action="{{ url_for('hotels.detail', hotel_id=hotel.id) }}"
+      class="card card-body mb-4">
+    <div class="row g-3 align-items-end">
+        <div class="col-6 col-md-4">
+            <label class="form-label" for="checkin">Ngày nhận</label>
+            <input class="form-control" type="date" id="checkin" name="checkin" value="{{ checkin }}">
+        </div>
+        <div class="col-6 col-md-4">
+            <label class="form-label" for="checkout">Ngày trả</label>
+            <input class="form-control" type="date" id="checkout" name="checkout" value="{{ checkout }}">
+        </div>
+        <div class="col-6 col-md-2">
+            <label class="form-label" for="guests">Số khách</label>
+            <input class="form-control" type="number" min="1" id="guests" name="guests" value="{{ guests }}">
+        </div>
+        <div class="col-6 col-md-2 d-grid">
+            <button class="btn btn-outline-primary" type="submit">Kiểm tra phòng trống</button>
+        </div>
+    </div>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h2 class="h4 mb-0">Phòng {% if has_dates %}còn trống{% endif %}</h2>
+    <a class="btn btn-outline-primary"
+       href="{{ url_for('rooms.index', hotel_id=hotel.id, checkin=checkin, checkout=checkout, guests=guests) }}">
+        Xem tất cả phòng và lọc
+    </a>
+</div>
+
+{% if groups %}
+{% for g in groups %}
+<div class="card mb-3">
+    <div class="card-header d-flex justify-content-between flex-wrap">
+        <strong>{{ g.type.name }}</strong>
+        <span>Tối đa {{ g.type.capacity }} khách ·
+            <span class="text-primary fw-bold">{{ "{:,.0f}".format(g.type.base_price) }} ₫</span>/đêm</span>
+    </div>
+    <div class="card-body">
+        {% if g.type.description %}<p class="text-muted">{{ g.type.description }}</p>{% endif %}
+        {% if g.total %}
+        <p class="small">Tổng {{ g.nights }} đêm: <strong>{{ "{:,.0f}".format(g.total) }} ₫</strong></p>
+        {% endif %}
+        <div class="d-flex flex-wrap gap-2">
+            {% for room in g.rooms %}
+            <div class="border rounded p-2 d-flex align-items-center gap-2">
+                <span>Phòng {{ room.room_number }} (tầng {{ room.floor }})</span>
+                {% if not current_user.is_authenticated or current_user.role == 'customer' %}
+                <a class="btn btn-sm btn-primary"
+                   href="{{ url_for('bookings.step_dates', room_id=room.id,
+                                    checkin=checkin, checkout=checkout, guests=guests) }}">Đặt phòng</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="alert alert-info">
+    {% if has_dates %}Không còn phòng phù hợp trong khoảng ngày này.{% else %}Khách sạn chưa có phòng.{% endif %}
+</div>
+{% endif %}
+{% endblock %}

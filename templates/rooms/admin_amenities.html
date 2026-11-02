@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý tiện nghi{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Quản lý tiện nghi</h1>
+    <a class="btn btn-primary" href="{{ url_for('rooms.admin_amenity_new') }}">+ Thêm tiện nghi</a>
+</div>
+
+{% if amenities %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Tên</th><th>Biểu tượng</th><th>Đang dùng</th><th class="text-end">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for a in amenities %}
+            <tr>
+                <td>{{ a.name }}</td>
+                <td class="text-muted">{{ a.icon or '—' }}</td>
+                <td class="small">
+                    {{ hotel_counts.get(a.id, 0) }} khách sạn,
+                    {{ type_counts.get(a.id, 0) }} loại phòng
+                </td>
+                <td class="text-end">
+                    <div class="d-inline-flex gap-1">
+                        <a class="btn btn-sm btn-outline-primary"
+                           href="{{ url_for('rooms.admin_amenity_edit', amenity_id=a.id) }}">Sửa</a>
+                        <form method="post" action="{{ url_for('rooms.admin_amenity_delete', amenity_id=a.id) }}"
+                              data-confirm="Xóa tiện nghi {{ a.name }}? Tiện nghi sẽ bị gỡ khỏi mọi khách sạn và loại phòng đang dùng.">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-outline-danger" type="submit">Xóa</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">Chưa có tiện nghi nào.</p>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/confirm.js') }}"></script>
+{% endblock %}

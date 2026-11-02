@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros/form_field.html" import render_field %}
+
+{% block title %}Đặt phòng – Thông tin khách{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <ol class="list-inline text-muted small mb-3">
+            <li class="list-inline-item">1. Chọn ngày</li>
+            <li class="list-inline-item">›</li>
+            <li class="list-inline-item fw-bold text-primary">2. Thông tin khách</li>
+            <li class="list-inline-item">›</li>
+            <li class="list-inline-item">3. Xác nhận</li>
+        </ol>
+
+        <div class="alert alert-light border">
+            <strong>{{ room.hotel.name }}</strong> · Phòng {{ room.room_number }} ·
+            {{ draft.check_in }} → {{ draft.check_out }} · {{ draft.guests }} khách
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    {{ render_field(form.guest_name, autocomplete="name") }}
+                    {{ render_field(form.guest_phone, inputmode="numeric", maxlength="10") }}
+                    {{ render_field(form.guest_email, autocomplete="email") }}
+                    {{ render_field(form.note, rows=3) }}
+                    <div class="d-flex justify-content-between">
+                        <a class="btn btn-outline-secondary"
+                           href="{{ url_for('bookings.step_dates', room_id=room.id) }}">Quay lại</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

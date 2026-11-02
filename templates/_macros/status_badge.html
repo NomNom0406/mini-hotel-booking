@@ -1,0 +1,7 @@
+{% macro status_badge(status) %}
+{% set colors = {'Pending': 'warning', 'Confirmed': 'success',
+                 'Cancelled': 'secondary', 'Completed': 'primary'} %}
+{% set labels = {'Pending': 'Chờ xác nhận', 'Confirmed': 'Đã xác nhận',
+                 'Cancelled': 'Đã hủy', 'Completed': 'Hoàn tất'} %}
+<span class="badge text-bg-{{ colors.get(status, 'light') }}">{{ labels.get(status, status) }}</span>
+{% endmacro %}

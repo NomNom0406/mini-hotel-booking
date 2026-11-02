@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+    <h1 class="h3 mb-0">Dashboard thống kê</h1>
+    <form method="get" action="{{ url_for('admin.dashboard') }}" class="d-flex gap-2">
+        <select class="form-select" name="hotel_id" aria-label="Lọc theo khách sạn">
+            <option value="">Tất cả khách sạn</option>
+            {% for h in hotels %}
+            <option value="{{ h[0] }}" {{ 'selected' if h[0] == selected_hotel_id else '' }}>{{ h[1] }}</option>
+            {% endfor %}
+        </select>
+        <button class="btn btn-primary" type="submit">Xem</button>
+    </form>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg-3">
+        <div class="card h-100 shadow-sm"><div class="card-body">
+            <div class="text-muted small">Doanh thu 6 tháng</div>
+            <div class="h4 mb-0 text-primary">{{ "{:,.0f}".format(data.revenue_total) }} ₫</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100 shadow-sm"><div class="card-body">
+            <div class="text-muted small">Công suất hôm nay</div>
+            <div class="h4 mb-0">{{ data.occupancy_today.rate }}%</div>
+            <div class="text-muted small">
+                {{ data.occupancy_today.occupied }}/{{ data.occupancy_today.active_rooms }} phòng đang ở
+            </div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100 shadow-sm"><div class="card-body">
+            <div class="text-muted small">Booking mới 6 tháng</div>
+            <div class="h4 mb-0">{{ data.bookings_total }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg-3">
+        <div class="card h-100 shadow-sm"><div class="card-body">
+            <div class="text-muted small">Tỷ lệ hủy</div>
+            <div class="h4 mb-0">{{ data.bookings.ratio.Cancelled }}%</div>
+        </div></div>
+    </div>
+</div>
+
+<div id="dashboard"
+     data-url="{{ url_for('admin.dashboard_data') }}"
+     data-hotel="{{ selected_hotel_id or '' }}">
+    <div id="dashboard-error" class="alert alert-danger d-none" role="alert"></div>
+    <div class="row g-3">
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm"><div class="card-body">
+                <h2 class="h6">Doanh thu theo tháng (Confirmed + Completed)</h2>
+                <canvas id="chart-revenue" height="140"></canvas>
+            </div></div>
+        </div>
+        <div class="col-12 col-lg-6">
+            <div class="card shadow-sm"><div class="card-body">
+                <h2 class="h6">Công suất phòng theo tháng (%)</h2>
+                <canvas id="chart-occupancy" height="140"></canvas>
+            </div></div>
+        </div>
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm"><div class="card-body">
+                <h2 class="h6">Booking tạo mới theo tháng</h2>
+                <canvas id="chart-bookings" height="140"></canvas>
+            </div></div>
+        </div>
+        <div class="col-12 col-lg-4">
+            <div class="card shadow-sm"><div class="card-body">
+                <h2 class="h6">Tỷ lệ theo trạng thái</h2>
+                <canvas id="chart-ratio" height="220"></canvas>
+            </div></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

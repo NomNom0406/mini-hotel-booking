@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Trang chủ{% endblock %}
+
+{% block content %}
+<section class="p-4 p-md-5 mb-4 bg-light rounded-3">
+    <h1 class="h2 fw-bold mb-1">Tìm khách sạn phù hợp với bạn</h1>
+    <p class="text-muted mb-4">Chọn điểm đến, ngày ở và số khách để xem phòng còn trống.</p>
+
+    <form method="post" action="{{ url_for('hotels.search_post') }}" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="row g-3 align-items-end">
+            <div class="col-12 col-md-3">
+                {{ form.province.label(class="form-label") }}
+                {{ form.province(class="form-select" + (" is-invalid" if form.province.errors else "")) }}
+                {% for err in form.province.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="col-6 col-md-3">
+                {{ form.checkin.label(class="form-label") }}
+                {{ form.checkin(class="form-control" + (" is-invalid" if form.checkin.errors else ""), type="date") }}
+                {% for err in form.checkin.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="col-6 col-md-3">
+                {{ form.checkout.label(class="form-label") }}
+                {{ form.checkout(class="form-control" + (" is-invalid" if form.checkout.errors else ""), type="date") }}
+                {% for err in form.checkout.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="col-6 col-md-1">
+                {{ form.guests.label(class="form-label") }}
+                {{ form.guests(class="form-control" + (" is-invalid" if form.guests.errors else ""), min=1) }}
+                {% for err in form.guests.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+            </div>
+            <div class="col-6 col-md-2 d-grid">
+                {{ form.submit(class="btn btn-primary") }}
+            </div>
+        </div>
+    </form>
+</section>
+
+<section>
+    <h2 class="h4 mb-3">Điểm đến phổ biến</h2>
+    {% if provinces %}
+    <div class="row g-3">
+        {% for p in provinces %}
+        <div class="col-6 col-md-3">
+            <a class="card text-decoration-none h-100" href="{{ url_for('hotels.search_get', province=p) }}">
+                <div class="card-body text-center">
+                    <span class="fw-semibold">{{ p }}</span>
+                </div>
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">Chưa có khách sạn nào.</p>
+    {% endif %}
+</section>
+{% endblock %}

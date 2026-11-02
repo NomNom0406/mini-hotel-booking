@@ -1,0 +1,7 @@
+{% macro render_select(field) %}
+<div class="mb-3">
+    {{ field.label(class="form-label") }}
+    {{ field(class="form-select" ~ (" is-invalid" if field.errors else ""), **kwargs) }}
+    {% for err in field.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+</div>
+{% endmacro %}

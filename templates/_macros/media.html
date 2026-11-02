@@ -1,0 +1,3 @@
+{% macro img_src(filename) -%}
+{{ url_for('static', filename=(filename if filename.startswith('uploads/') else 'uploads/' ~ filename)) }}
+{%- endmacro %}

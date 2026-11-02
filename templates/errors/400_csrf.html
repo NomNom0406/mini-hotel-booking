@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Lỗi CSRF{% endblock %}
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4">400</h1>
+    <p class="lead">Token bảo mật không hợp lệ hoặc đã hết hạn.</p>
+    <p>Vui lòng tải lại trang và thử lại.</p>
+    <a href="{{ url_for('hotels.index') }}" class="btn btn-primary">Về trang chủ</a>
+</div>
+{% endblock %}

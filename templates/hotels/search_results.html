@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% from "_macros/hotel_card.html" import hotel_card %}
+{% from "_macros/pagination.html" import render_pagination %}
+
+{% block title %}Kết quả tìm kiếm{% endblock %}
+
+{% block content %}
+<form method="post" action="{{ url_for('hotels.search_post') }}" class="card card-body mb-4" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="row g-3 align-items-end">
+        <div class="col-12 col-md-3">
+            {{ form.province.label(class="form-label") }}
+            {{ form.province(class="form-select") }}
+        </div>
+        <div class="col-6 col-md-3">
+            {{ form.checkin.label(class="form-label") }}
+            {{ form.checkin(class="form-control" ~ (" is-invalid" if form.checkin.errors else ""), type="date") }}
+            {% for err in form.checkin.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+        </div>
+        <div class="col-6 col-md-3">
+            {{ form.checkout.label(class="form-label") }}
+            {{ form.checkout(class="form-control" ~ (" is-invalid" if form.checkout.errors else ""), type="date") }}
+            {% for err in form.checkout.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+        </div>
+        <div class="col-6 col-md-1">
+            {{ form.guests.label(class="form-label") }}
+            {{ form.guests(class="form-control", min=1) }}
+        </div>
+        <div class="col-6 col-md-2 d-grid">{{ form.submit(class="btn btn-primary") }}</div>
+    </div>
+</form>
+
+<div class="row g-4">
+    <aside class="col-12 col-lg-3">
+        <form method="get" action="{{ url_for('hotels.search_get') }}" class="card card-body">
+            {% for key in ('province', 'checkin', 'checkout') %}
+            {% if params[key] %}<input type="hidden" name="{{ key }}" value="{{ params[key] }}">{% endif %}
+            {% endfor %}
+            {% if params.guests > 1 %}<input type="hidden" name="guests" value="{{ params.guests }}">{% endif %}
+
+            <h2 class="h6">Sắp xếp</h2>
+            <select class="form-select mb-3" name="sort" aria-label="Sắp xếp">
+                {% for value, label in sorts.items() %}
+                <option value="{{ value }}" {{ 'selected' if params.sort == value else '' }}>{{ label }}</option>
+                {% endfor %}
+            </select>
+
+            <h2 class="h6">Giá mỗi đêm (₫)</h2>
+            <div class="row g-2 mb-3">
+                <div class="col-6">
+                    <input class="form-control" type="number" min="0" step="100000" name="min_price"
+                           placeholder="Từ" aria-label="Giá từ" value="{{ params.min_price if params.min_price is not none else '' }}">
+                </div>
+                <div class="col-6">
+                    <input class="form-control" type="number" min="0" step="100000" name="max_price"
+                           placeholder="Đến" aria-label="Giá đến" value="{{ params.max_price if params.max_price is not none else '' }}">
+                </div>
+            </div>
+
+            <h2 class="h6">Hạng sao</h2>
+            <select class="form-select mb-3" name="stars" aria-label="Hạng sao">
+                <option value="">Tất cả</option>
+                {% for n in (2, 3, 4, 5) %}
+                <option value="{{ n }}" {{ 'selected' if params.stars == n else '' }}>Từ {{ n }} sao trở lên</option>
+                {% endfor %}
+            </select>
+
+            <h2 class="h6">Tiện nghi</h2>
+            <div class="mb-3">
+                {% for value, label in amenities %}
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" name="amenity"
+                           id="amenity-{{ value }}" value="{{ value }}"
+                           {{ 'checked' if value in params.amenities else '' }}>
+                    <label class="form-check-label" for="amenity-{{ value }}">{{ label }}</label>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="d-grid gap-2">
+                <button class="btn btn-primary" type="submit">Áp dụng</button>
+                <a class="btn btn-outline-secondary"
+                   href="{{ url_for('hotels.search_get', province=params.province,
+                                    checkin=params.checkin, checkout=params.checkout) }}">Xóa bộ lọc</a>
+            </div>
+        </form>
+    </aside>
+
+    <section class="col-12 col-lg-9">
+        <h1 class="h4 mb-3">
+            {% if params.province %}Khách sạn tại {{ params.province }}{% else %}Tất cả khách sạn{% endif %}
+            <small class="text-muted">({{ pagination.total }} kết quả)</small>
+        </h1>
+
+        {% if pagination.items %}
+        <div class="row g-3">
+            {% for h in pagination.items %}
+            <div class="col-12 col-md-6 col-xl-4">
+                {{ hotel_card(h, prices.get(h.id), params.checkin, params.checkout, params.guests) }}
+            </div>
+            {% endfor %}
+        </div>
+        {{ render_pagination(pagination, 'hotels.search_get', **query) }}
+        {% else %}
+        <div class="alert alert-info">Không có khách sạn nào phù hợp. Hãy thử nới bộ lọc hoặc đổi ngày.</div>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}

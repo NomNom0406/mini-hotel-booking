@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% from "_macros/status_badge.html" import status_badge %}
+
+{% block title %}Booking của tôi{% endblock %}
+
+{% block content %}
+<h1 class="h3 mb-3">Booking của tôi</h1>
+
+{% if bookings %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Mã</th><th>Khách sạn / Phòng</th><th>Nhận</th><th>Trả</th>
+                <th class="text-end">Tổng tiền</th><th>Trạng thái</th><th></th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for b in bookings %}
+            <tr id="booking-{{ b.id }}">
+                <td>{{ b.code }}</td>
+                <td>{{ b.room.hotel.name }}<br>
+                    <small class="text-muted">Phòng {{ b.room.room_number }}</small></td>
+                <td>{{ b.check_in.strftime('%d/%m/%Y') }}</td>
+                <td>{{ b.check_out.strftime('%d/%m/%Y') }}</td>
+                <td class="text-end">{{ "{:,.0f}".format(b.total_price) }} ₫</td>
+                <td>{{ status_badge(b.status) }}
+                    {% if b.status == 'Cancelled' and b.cancel_reason %}
+                    <br><small class="text-muted">{{ b.cancel_reason }}</small>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    {% if b.status in ('Pending', 'Confirmed') %}
+                    <form method="post" action="{{ url_for('bookings.cancel', booking_id=b.id) }}"
+                          onsubmit="return confirm('Hủy booking {{ b.code }}?');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button class="btn btn-sm btn-outline-danger" type="submit">Hủy</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">Bạn chưa có booking nào.
+    <a href="{{ url_for('hotels.index') }}">Tìm khách sạn</a></p>
+{% endif %}
+{% endblock %}

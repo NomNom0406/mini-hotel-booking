@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Lịch booking{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 mb-0">Lịch booking</h1>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('bookings.manage_bookings') }}">
+        Danh sách booking
+    </a>
+</div>
+
+<form method="get" action="{{ url_for('bookings.manage_calendar') }}"
+      class="card card-body mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-5">
+            <label class="form-label" for="hotel_id">Khách sạn</label>
+            <select class="form-select" id="hotel_id" name="hotel_id">
+                {% for h in hotels %}
+                <option value="{{ h[0] }}" {{ 'selected' if h[0] == hotel_id else '' }}>{{ h[1] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <label class="form-label" for="month">Tháng</label>
+            <input class="form-control" type="month" id="month" name="month" value="{{ month }}">
+        </div>
+        <div class="col-6 col-md-2 d-grid">
+            <button class="btn btn-primary" type="submit">Xem</button>
+        </div>
+        <div class="col-12 col-md-2 d-flex gap-1">
+            <a class="btn btn-outline-secondary flex-fill"
+               href="{{ url_for('bookings.manage_calendar', hotel_id=hotel_id, month=prev_month) }}">‹</a>
+            <a class="btn btn-outline-secondary flex-fill"
+               href="{{ url_for('bookings.manage_calendar', hotel_id=hotel_id, month=next_month) }}">›</a>
+        </div>
+    </div>
+</form>
+
+<div class="mb-2 small">
+    <span class="badge text-bg-warning">Chờ xác nhận</span>
+    <span class="badge text-bg-success">Đã xác nhận</span>
+    <span class="badge text-bg-primary">Hoàn tất</span>
+    <span class="badge text-bg-secondary">Đã hủy</span>
+</div>
+
+<div id="calendar"
+     data-url="{{ url_for('bookings.manage_calendar_data') }}"
+     data-hotel="{{ hotel_id or '' }}"
+     data-month="{{ month }}">
+    <p class="text-muted">Đang tải lịch…</p>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
+{% endblock %}

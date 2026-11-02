@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% from "_macros/status_badge.html" import status_badge %}
+
+{% block title %}Quản lý booking{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 mb-0">Quản lý booking</h1>
+    <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('bookings.manage_calendar') }}">
+        Lịch booking
+    </a>
+</div>
+
+<form method="post" action="{{ url_for('bookings.manage_filter') }}" class="card card-body mb-3" novalidate>
+    {{ filter_form.hidden_tag() }}
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-3">
+            {{ filter_form.hotel_id.label(class="form-label") }}
+            {{ filter_form.hotel_id(class="form-select") }}
+        </div>
+        <div class="col-6 col-md-2">
+            {{ filter_form.status.label(class="form-label") }}
+            {{ filter_form.status(class="form-select") }}
+        </div>
+        <div class="col-6 col-md-2">
+            {{ filter_form.date_from.label(class="form-label") }}
+            {{ filter_form.date_from(class="form-control", type="date") }}
+        </div>
+        <div class="col-6 col-md-2">
+            {{ filter_form.date_to.label(class="form-label") }}
+            {{ filter_form.date_to(class="form-control", type="date") }}
+        </div>
+        <div class="col-6 col-md-2">
+            {{ filter_form.q.label(class="form-label") }}
+            {{ filter_form.q(class="form-control", placeholder="Mã, tên khách") }}
+        </div>
+        <div class="col-12 col-md-1 d-grid">
+            {{ filter_form.submit(class="btn btn-primary") }}
+        </div>
+    </div>
+</form>
+
+{% if pagination.items %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Mã</th><th>Khách</th><th>Phòng</th><th>Nhận</th><th>Trả</th>
+                <th class="text-end">Tổng tiền</th><th>Trạng thái</th><th>Đổi trạng thái</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for b in pagination.items %}
+            <tr>
+                <td>{{ b.code }}</td>
+                <td>{{ b.guest_name }}<br><small class="text-muted">{{ b.guest_phone }}</small></td>
+                <td>{{ b.room.hotel.name }}<br><small class="text-muted">Phòng {{ b.room.room_number }}</small></td>
+                <td>{{ b.check_in.strftime('%d/%m/%Y') }}</td>
+                <td>{{ b.check_out.strftime('%d/%m/%Y') }}</td>
+                <td class="text-end">{{ "{:,.0f}".format(b.total_price) }} ₫</td>
+                <td>
+                    {{ status_badge(b.status) }}
+                    {% if b.status == 'Cancelled' and b.cancel_reason %}
+                    <br><small class="text-muted">{{ b.cancel_reason }}</small>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if b.status in ('Pending', 'Confirmed') %}
+                    <form method="post"
+                          action="{{ url_for('bookings.update_booking_status', booking_id=b.id) }}"
+                          class="d-flex gap-1">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        {{ status_form.status(class="form-select form-select-sm", id="status-" ~ b.id) }}
+                        {{ status_form.cancel_reason(class="form-control form-control-sm",
+                                                     id="reason-" ~ b.id, placeholder="Lý do (khi hủy)") }}
+                        <button class="btn btn-sm btn-outline-primary" type="submit">Lưu</button>
+                    </form>
+                    {% else %}
+                    <span class="text-muted small">Đã kết thúc</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if pagination.pages > 1 %}
+<nav aria-label="Phân trang">
+    <ul class="pagination justify-content-center">
+        {% for p in pagination.iter_pages() %}
+            {% if p %}
+            <li class="page-item {{ 'active' if p == pagination.page else '' }}">
+                <a class="page-link"
+                   href="{{ url_for('bookings.manage_bookings', page=p, **filters) }}">{{ p }}</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">…</span></li>
+            {% endif %}
+        {% endfor %}
+    </ul>
+</nav>
+{% endif %}
+{% else %}
+<p class="text-muted">Không có booking nào khớp bộ lọc.</p>
+{% endif %}
+{% endblock %}

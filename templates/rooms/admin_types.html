@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% from "_macros/media.html" import img_src %}
+
+{% block title %}Quản lý loại phòng{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h1 class="h3 mb-0">Quản lý loại phòng</h1>
+    <a class="btn btn-primary" href="{{ url_for('rooms.admin_type_new') }}">+ Thêm loại phòng</a>
+</div>
+
+<form method="get" action="{{ url_for('rooms.admin_types') }}" class="card card-body mb-3">
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-6">
+            <label class="form-label" for="hotel_id">Khách sạn</label>
+            <select class="form-select" id="hotel_id" name="hotel_id">
+                <option value="">Tất cả khách sạn</option>
+                {% for h_id, h_name in hotels %}
+                <option value="{{ h_id }}" {{ 'selected' if h_id == hotel_id else '' }}>{{ h_name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-12 col-md-2 d-grid">
+            <button class="btn btn-outline-primary" type="submit">Lọc</button>
+        </div>
+    </div>
+</form>
+
+{% if room_types %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Ảnh</th><th>Khách sạn</th><th>Loại phòng</th>
+                <th class="text-end">Giá/đêm</th><th class="text-center">Sức chứa</th>
+                <th class="text-center">Số phòng</th><th>Tiện nghi</th><th class="text-end">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for t in room_types %}
+            <tr>
+                <td style="width: 80px;">
+                    {% if t.image_filename %}
+                    <img src="{{ img_src(t.image_filename) }}" alt="{{ t.name }}" class="img-thumbnail"
+                         style="width: 72px; height: 54px; object-fit: cover;" loading="lazy">
+                    {% endif %}
+                </td>
+                <td>{{ t.hotel.name }}</td>
+                <td>{{ t.name }}</td>
+                <td class="text-end">{{ "{:,.0f}".format(t.base_price) }} ₫</td>
+                <td class="text-center">{{ t.capacity }}</td>
+                <td class="text-center">{{ room_counts.get(t.id, 0) }}</td>
+                <td>
+                    {% for a in t.amenities %}<span class="badge text-bg-light border">{{ a.name }}</span> {% endfor %}
+                </td>
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary"
+                       href="{{ url_for('rooms.admin_type_edit', type_id=t.id) }}">Sửa</a>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">Không có loại phòng nào.</p>
+{% endif %}
+{% endblock %}

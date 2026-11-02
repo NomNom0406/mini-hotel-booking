@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% from "_macros/form_field.html" import render_field %}
+
+{% block title %}{{ 'Sửa người dùng' if user else 'Tạo tài khoản lễ tân' }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">{{ 'Sửa người dùng' if user else 'Tạo tài khoản lễ tân' }}</h1>
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    {% if user %}
+                        <p class="text-muted small">Email: {{ user.email }}</p>
+                        {{ render_field(form.full_name) }}
+                        <div class="mb-3">
+                            {{ form.role.label(class="form-label") }}
+                            {{ form.role(class="form-select" ~ (" is-invalid" if form.role.errors else "")) }}
+                            {% for err in form.role.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                        </div>
+                        <div class="form-check mb-3">
+                            {{ form.is_active(class="form-check-input") }}
+                            {{ form.is_active.label(class="form-check-label") }}
+                        </div>
+                        {% if user.id == current_user.id %}
+                        <div class="alert alert-warning small">
+                            Đây là tài khoản của bạn: bạn không thể tự hạ vai trò hoặc khóa chính mình.
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        {{ render_field(form.full_name, autocomplete="name") }}
+                        {{ render_field(form.email, autocomplete="off") }}
+                        {{ render_field(form.phone, inputmode="numeric", maxlength="10") }}
+                        {{ render_field(form.password, autocomplete="new-password") }}
+                        {{ render_field(form.confirm_password, autocomplete="new-password") }}
+                    {% endif %}
+                    <div class="d-flex justify-content-between">
+                        <a class="btn btn-outline-secondary" href="{{ url_for('admin.users') }}">Quay lại</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

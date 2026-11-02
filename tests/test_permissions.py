@@ -12,11 +12,10 @@ def test_customer_cannot_access_admin(client, app):
     assert resp.status_code == 403
 
 
-def test_anonymous_cannot_access_bookings(client):
-    """Chưa login không vào được /bookings/."""
-    # Logout trước
-    client.get("/auth/logout")
-    resp = client.get("/bookings/", follow_redirects=False)
+def test_anonymous_cannot_access_bookings(app):
+    """Chưa login không vào được /my-bookings."""
+    anon = app.test_client()  # client mới, không dính session của test khác
+    resp = anon.get("/my-bookings", follow_redirects=False)
     assert resp.status_code == 302
     assert "/auth/login" in resp.headers["Location"]
 
@@ -42,27 +41,29 @@ def test_customer_cannot_see_others_booking(client, app):
         db.session.commit()
         booking_id = b.id
 
-    # Login là customer1
+    # Login là customer1 bằng client mới
     from tests.conftest import _get_csrf
-    client.post("/auth/login", data={
+    c1 = app.test_client()
+    c1.post("/auth/login", data={
         "email": "customer@test.com",
         "password": "Password123!",
-        "csrf_token": _get_csrf(client, "/auth/login"),
+        "csrf_token": _get_csrf(c1, "/auth/login"),
     }, follow_redirects=True)
 
-    # Thử xem booking của customer2
-    resp = client.get(f"/bookings/{booking_id}")
+    # Thử hủy booking của customer2 (route có @booking_owner_or_staff)
+    resp = c1.post(f"/book/{booking_id}/cancel")
     assert resp.status_code == 403
 
 
-def test_staff_can_access_admin(client):
-    """Receptionist vào được /admin/."""
+def test_staff_cannot_access_dashboard(app):
+    """Receptionist không có dashboard.view nên /admin/ trả 403."""
     from tests.conftest import _get_csrf
-    client.post("/auth/login", data={
+    staff = app.test_client()
+    staff.post("/auth/login", data={
         "email": "staff@test.com",
         "password": "Password123!",
-        "csrf_token": _get_csrf(client, "/auth/login"),
+        "csrf_token": _get_csrf(staff, "/auth/login"),
     }, follow_redirects=True)
 
-    resp = client.get("/admin/")
-    assert resp.status_code == 200
+    resp = staff.get("/admin/")
+    assert resp.status_code == 403

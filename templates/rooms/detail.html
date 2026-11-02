@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% from "_macros/media.html" import img_src %}
+
+{% block title %}Phòng {{ room.room_number }} – {{ room.hotel.name }}{% endblock %}
+
+{% block content %}
+{% set rt = room.room_type %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('hotels.index') }}">Trang chủ</a></li>
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('hotels.detail', hotel_id=room.hotel_id) }}">{{ room.hotel.name }}</a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="{{ url_for('rooms.index', hotel_id=room.hotel_id) }}">Phòng</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ room.room_number }}</li>
+    </ol>
+</nav>
+
+<div class="row g-4">
+    <div class="col-12 col-lg-6">
+        {% if rt.image_filename %}
+        <img src="{{ img_src(rt.image_filename) }}" class="img-fluid rounded" alt="{{ rt.name }}">
+        {% else %}
+        <div class="bg-light rounded d-flex align-items-center justify-content-center fs-1"
+             style="height: 280px;">🛏️</div>
+        {% endif %}
+    </div>
+    <div class="col-12 col-lg-6">
+        <h1 class="h3">Phòng {{ room.room_number }} · {{ rt.name }}</h1>
+        <p class="text-muted mb-1">
+            <a href="{{ url_for('hotels.detail', hotel_id=room.hotel_id) }}">{{ room.hotel.name }}</a>
+            · {{ room.hotel.province }}
+        </p>
+        <p class="mb-2">Tầng {{ room.floor }} · tối đa {{ rt.capacity }} khách</p>
+        <p class="h4 text-primary mb-3">
+            {{ "{:,.0f}".format(rt.base_price) }} ₫ <small class="text-muted fs-6">/đêm</small>
+        </p>
+        {% if rt.description %}<p>{{ rt.description }}</p>{% endif %}
+        {% if rt.amenities %}
+        <p>
+            {% for a in rt.amenities %}
+            <span class="badge text-bg-light border">{{ a.name }}</span>
+            {% endfor %}
+        </p>
+        {% endif %}
+
+        <form method="get" action="{{ url_for('rooms.detail', room_id=room.id) }}" class="card card-body mb-3">
+            <div class="row g-2 align-items-end">
+                <div class="col-6">
+                    <label class="form-label" for="checkin">Ngày nhận</label>
+                    <input class="form-control" type="date" id="checkin" name="checkin" value="{{ checkin }}">
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="checkout">Ngày trả</label>
+                    <input class="form-control" type="date" id="checkout" name="checkout" value="{{ checkout }}">
+                </div>
+                <div class="col-6">
+                    <label class="form-label" for="guests">Số khách</label>
+                    <input class="form-control" type="number" min="1" id="guests" name="guests" value="{{ guests }}">
+                </div>
+                <div class="col-6 d-grid">
+                    <button class="btn btn-outline-primary" type="submit">Kiểm tra</button>
+                </div>
+            </div>
+        </form>
+
+        {% if nights %}
+        <p>Tổng {{ nights }} đêm: <strong>{{ "{:,.0f}".format(total) }} ₫</strong></p>
+        {% if available == false %}
+        <div class="alert alert-danger">Phòng đã có người đặt trong khoảng ngày này.</div>
+        {% endif %}
+        {% endif %}
+        {% if not fits %}
+        <div class="alert alert-warning">Phòng này chỉ chứa tối đa {{ rt.capacity }} khách.</div>
+        {% endif %}
+
+        {% if not current_user.is_authenticated or current_user.role == 'customer' %}
+        {% if available != false and fits %}
+        <a class="btn btn-primary btn-lg"
+           href="{{ url_for('bookings.step_dates', room_id=room.id,
+                            checkin=checkin, checkout=checkout, guests=guests) }}">Đặt phòng</a>
+        {% else %}
+        <button class="btn btn-primary btn-lg" type="button" disabled>Đặt phòng</button>
+        {% endif %}
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

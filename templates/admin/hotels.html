@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Quản lý khách sạn{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Quản lý khách sạn</h1>
+    <a class="btn btn-primary" href="{{ url_for('hotels.admin_create') }}">+ Thêm khách sạn</a>
+</div>
+
+{% if hotels %}
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead>
+            <tr>
+                <th>Tên</th>
+                <th>Tỉnh/thành</th>
+                <th>Hạng sao</th>
+                <th class="text-center">Số phòng</th>
+                <th>Trạng thái</th>
+                <th class="text-end">Thao tác</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for h in hotels %}
+            {% set action_label = 'Ẩn' if h.is_active else 'Hiện' %}
+            <tr>
+                <td>{{ h.name }}</td>
+                <td>{{ h.province }}</td>
+                <td class="text-warning">{{ '★' * h.star_rating }}</td>
+                <td class="text-center">{{ room_counts.get(h.id, 0) }}</td>
+                <td>
+                    {% if h.is_active %}
+                    <span class="badge text-bg-success">Đang hiện</span>
+                    {% else %}
+                    <span class="badge text-bg-secondary">Đã ẩn</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <div class="d-inline-flex gap-1">
+                        {% if h.is_active %}
+                        <a class="btn btn-sm btn-outline-secondary"
+                           href="{{ url_for('hotels.detail', hotel_id=h.id) }}">Xem</a>
+                        {% endif %}
+                        <a class="btn btn-sm btn-outline-primary"
+                           href="{{ url_for('hotels.admin_edit', hotel_id=h.id) }}">Sửa</a>
+                        <form method="post"
+                              action="{{ url_for('hotels.admin_toggle', hotel_id=h.id) }}"
+                              data-confirm="{{ action_label }} khách sạn này?">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm {{ 'btn-outline-danger' if h.is_active else 'btn-outline-success' }}"
+                                    type="submit">{{ action_label }}</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p class="text-muted">Chưa có khách sạn nào.</p>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.querySelectorAll("form[data-confirm]").forEach(function (form) {
+        form.addEventListener("submit", function (event) {
+            if (!window.confirm(form.dataset.confirm)) {
+                event.preventDefault();
+            }
+        });
+    });
+</script>
+{% endblock %}

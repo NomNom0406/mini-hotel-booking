@@ -1,8 +1,11 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import (StringField, TextAreaField, IntegerField,
-                     SelectField, BooleanField, SubmitField, DecimalField)
-from wtforms.validators import DataRequired, Length, NumberRange, Optional, URL
+from wtforms import (StringField, TextAreaField, IntegerField, PasswordField,
+                    SelectField, BooleanField, SubmitField, DecimalField)
+from wtforms.validators import (DataRequired, Email, EqualTo, Length,
+                                NumberRange, Optional, URL)
+
+from ..auth.forms import PASSWORD_RULE, PHONE_RULE
 
 
 class HotelForm(FlaskForm):
@@ -94,6 +97,30 @@ class BookingStatusForm(FlaskForm):
         Length(max=500, message="Lý do tối đa 500 ký tự."),
     ])
     submit = SubmitField("Cập nhật")
+
+
+class ReceptionistForm(FlaskForm):
+    """Admin tạo tài khoản lễ tân."""
+    full_name = StringField("Họ tên", validators=[
+        DataRequired(message="Vui lòng nhập họ tên."),
+        Length(min=2, max=100, message="Họ tên từ 2 đến 100 ký tự."),
+    ])
+    email = StringField("Email", validators=[
+        DataRequired(message="Vui lòng nhập email."),
+        Email(message="Email không đúng định dạng."),
+        Length(max=120, message="Email tối đa 120 ký tự."),
+    ])
+    phone = StringField("Số điện thoại", validators=[Optional(), PHONE_RULE])
+    password = PasswordField("Mật khẩu", validators=[
+        DataRequired(message="Vui lòng nhập mật khẩu."),
+        Length(min=8, message="Mật khẩu phải từ 8 ký tự."),
+        PASSWORD_RULE,
+    ])
+    confirm_password = PasswordField("Xác nhận mật khẩu", validators=[
+        DataRequired(message="Vui lòng xác nhận mật khẩu."),
+        EqualTo("password", message="Mật khẩu xác nhận không khớp."),
+    ])
+    submit = SubmitField("Tạo tài khoản lễ tân")
 
 
 class UserForm(FlaskForm):

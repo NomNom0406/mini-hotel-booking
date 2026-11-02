@@ -1,13 +1,23 @@
-from flask import Blueprint, render_template, redirect, url_for, flash, session, abort
+from datetime import date, timedelta
+
+from flask import Blueprint, render_template, redirect, url_for, flash, session, abort, request, jsonify
 from flask_login import login_required, current_user
-from datetime import date
+
 from ..models import Booking, Room
 from ..extensions import db
 from ..utils.dates import nights_between, has_conflict
 from ..utils.security import sanitize
-from .forms import BookingStep1Form, BookingStep2Form, BookingStep3Form, CancelBookingForm
-from ..decorators import booking_owner_or_staff
-from .services import create_booking, change_status, RoomUnavailable
+from ..decorators import booking_owner_or_staff, roles_required, permission_required
+from ..admin.forms import BookingStatusForm
+from ..admin.services import get_hotel_choices
+from .forms import (
+    BookingStep1Form, BookingStep2Form, BookingStep3Form,
+    CancelBookingForm, BookingFilterForm,
+)
+from .services import (
+    create_booking, change_status, list_bookings, RoomUnavailable,
+    get_calendar_data, parse_month,
+)
 
 bookings_bp = Blueprint("bookings", __name__)
 
@@ -31,19 +41,18 @@ def my_bookings():
 @login_required
 def success(code):
     """Trang kết quả sau khi đặt phòng thành công."""
-    booking = db.session.execute(
-        db.select(Booking).filter_by(code=code)
-    ).scalar_one_or_404()
+    booking = db.one_or_404(db.select(Booking).filter_by(code=code))
     # Chỉ chủ booking hoặc nhân viên xem được
     if current_user.role == "customer" and booking.user_id != current_user.id:
         abort(403)
     return render_template("bookings/success.html", booking=booking)
 
 
-# ─── Booking steps 
+# ─── Booking steps ──────────────────────────────────────────────────────────
 
 @bookings_bp.route("/book/<int:room_id>/dates", methods=["GET", "POST"])
 @login_required
+@roles_required("customer")
 def step_dates(room_id):
     """Bước 1: Chọn ngày và số khách."""
     room = db.session.get(Room, room_id)
@@ -51,17 +60,20 @@ def step_dates(room_id):
         abort(404)
 
     form = BookingStep1Form()
-    # Điền sẵn từ query string nếu GET (mang theo từ trang chi tiết khách sạn)
+    # Điền sẵn khi GET (mang theo từ trang chi tiết khách sạn / bản nháp)
     if not form.is_submitted():
-        form.room_id.data  = str(room_id)
+        form.room_id.data = str(room_id)
         form.hotel_id.data = str(room.hotel_id)
-        ci = session.get("booking_draft", {}).get("check_in", "")
-        co = session.get("booking_draft", {}).get("check_out", "")
-        if ci:
-            from datetime import date as d
+        draft = session.get("booking_draft", {})
+        ci = request.args.get("checkin") or draft.get("check_in", "")
+        co = request.args.get("checkout") or draft.get("check_out", "")
+        guests = request.args.get("guests", type=int)
+        if guests and guests > 0:
+            form.guests.data = guests
+        if ci and co:
             try:
-                form.check_in.data  = d.fromisoformat(ci)
-                form.check_out.data = d.fromisoformat(co)
+                form.check_in.data = date.fromisoformat(ci)
+                form.check_out.data = date.fromisoformat(co)
             except ValueError:
                 pass
 
@@ -96,6 +108,7 @@ def step_dates(room_id):
 
 @bookings_bp.route("/book/<int:room_id>/guest", methods=["GET", "POST"])
 @login_required
+@roles_required("customer")
 def step_guest(room_id):
     """Bước 2: Thông tin khách."""
     draft = session.get("booking_draft")
@@ -105,7 +118,7 @@ def step_guest(room_id):
 
     form = BookingStep2Form()
     if not form.is_submitted():
-        form.guest_name.data  = current_user.full_name
+        form.guest_name.data = current_user.full_name
         form.guest_phone.data = current_user.phone or ""
         form.guest_email.data = current_user.email
 
@@ -125,6 +138,7 @@ def step_guest(room_id):
 
 @bookings_bp.route("/book/<int:room_id>/confirm", methods=["GET", "POST"])
 @login_required
+@roles_required("customer")
 def step_confirm(room_id):
     """Bước 3: Xác nhận và tạo booking."""
     draft = session.get("booking_draft")
@@ -132,12 +146,12 @@ def step_confirm(room_id):
         flash("Vui lòng bắt đầu từ bước 1.", "warning")
         return redirect(url_for("bookings.step_dates", room_id=room_id))
 
-    room    = db.session.get(Room, room_id)
-    ci      = date.fromisoformat(draft["check_in"])
-    co      = date.fromisoformat(draft["check_out"])
-    nights  = nights_between(ci, co)
-    total   = room.room_type.base_price * nights
-    form    = BookingStep3Form()
+    room = db.session.get(Room, room_id)
+    ci = date.fromisoformat(draft["check_in"])
+    co = date.fromisoformat(draft["check_out"])
+    nights = nights_between(ci, co)
+    total = room.room_type.base_price * nights
+    form = BookingStep3Form()
 
     if form.validate_on_submit():
         try:
@@ -165,7 +179,7 @@ def step_confirm(room_id):
                            nights=nights, total=total, ci=ci, co=co)
 
 
-# ─── Cancel 
+# ─── Cancel ─────────────────────────────────────────────────────────────────
 
 @bookings_bp.post("/book/<int:booking_id>/cancel")
 @login_required
@@ -184,3 +198,94 @@ def cancel(booking_id):
         except ValueError as e:
             flash(str(e), "warning")
     return redirect(url_for("bookings.my_bookings"))
+
+
+# ─── Quản lý booking (Receptionist, Admin) ─────────────────────────────────
+
+_FILTER_KEYS = ("hotel_id", "status", "date_from", "date_to", "q")
+
+
+def _filter_form(**data):
+    form = BookingFilterForm(data=data)
+    form.hotel_id.choices = [("", "Tất cả khách sạn")] + [
+        (str(h[0]), h[1]) for h in get_hotel_choices()
+    ]
+    return form
+
+
+@bookings_bp.get("/manage/bookings")
+@login_required
+@roles_required("admin", "receptionist")
+def manage_bookings():
+    filters = {k: request.args.get(k, "").strip() for k in _FILTER_KEYS}
+    page = request.args.get("page", 1, type=int)
+    pagination = list_bookings(
+        hotel_id=int(filters["hotel_id"]) if filters["hotel_id"].isdigit() else None,
+        status=filters["status"], date_from=filters["date_from"],
+        date_to=filters["date_to"], q=filters["q"], page=page,
+    )
+    return render_template("manage/bookings.html", pagination=pagination,
+                           filters={k: v for k, v in filters.items() if v},
+                           filter_form=_filter_form(**filters),
+                           status_form=BookingStatusForm())
+
+
+@bookings_bp.post("/manage/bookings/filter")
+@login_required
+@roles_required("admin", "receptionist")
+def manage_filter():
+    form = _filter_form()
+    if form.validate_on_submit():
+        params = {k: getattr(form, k).data for k in _FILTER_KEYS
+                  if getattr(form, k).data}
+        return redirect(url_for("bookings.manage_bookings", **params))
+    flash("Bộ lọc không hợp lệ.", "danger")
+    return redirect(url_for("bookings.manage_bookings"))
+
+
+@bookings_bp.post("/manage/bookings/<int:booking_id>/status")
+@login_required
+@permission_required("booking.change_status")
+def update_booking_status(booking_id):
+    booking = db.get_or_404(Booking, booking_id)
+    form = BookingStatusForm()
+    if form.validate_on_submit():
+        try:
+            change_status(booking, form.status.data, current_user,
+                          form.cancel_reason.data)
+            flash(f"Đã cập nhật trạng thái booking {booking.code}.", "success")
+        except PermissionError:
+            abort(403)
+        except ValueError as e:
+            flash(str(e), "danger")
+    else:
+        flash("Dữ liệu đổi trạng thái không hợp lệ.", "danger")
+    return redirect(url_for("bookings.manage_bookings"))
+
+
+
+@bookings_bp.get("/manage/bookings/calendar")
+@login_required
+@roles_required("admin", "receptionist")
+def manage_calendar():
+    hotels = get_hotel_choices()
+    hotel_id = request.args.get("hotel_id", type=int) or (hotels[0][0] if hotels else None)
+    month = parse_month(request.args.get("month", ""))
+    return render_template(
+        "manage/calendar.html", hotels=hotels, hotel_id=hotel_id,
+        month=month.strftime("%Y-%m"),
+        prev_month=(month - timedelta(days=1)).strftime("%Y-%m"),
+        next_month=(month + timedelta(days=32)).strftime("%Y-%m"),
+    )
+
+
+@bookings_bp.get("/manage/bookings/calendar/data")
+@login_required
+@roles_required("admin", "receptionist")
+def manage_calendar_data():
+    hotel_id = request.args.get("hotel_id", type=int)
+    if not hotel_id:
+        return jsonify(error={"code": 400, "message": "Thiếu hotel_id",
+                              "fields": {"hotel_id": "Bắt buộc"}}), 400
+    month = parse_month(request.args.get("month", ""))
+    return jsonify(data=get_calendar_data(hotel_id, month))

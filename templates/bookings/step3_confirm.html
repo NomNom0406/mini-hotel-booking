@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Đặt phòng – Xác nhận{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <ol class="list-inline text-muted small mb-3">
+            <li class="list-inline-item">1. Chọn ngày</li>
+            <li class="list-inline-item">›</li>
+            <li class="list-inline-item">2. Thông tin khách</li>
+            <li class="list-inline-item">›</li>
+            <li class="list-inline-item fw-bold text-primary">3. Xác nhận</li>
+        </ol>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h5 mb-3">Xác nhận đặt phòng</h1>
+                <dl class="row mb-3">
+                    <dt class="col-5 col-md-4">Khách sạn</dt>
+                    <dd class="col-7 col-md-8">{{ room.hotel.name }}</dd>
+                    <dt class="col-5 col-md-4">Phòng</dt>
+                    <dd class="col-7 col-md-8">{{ room.room_number }} · {{ room.room_type.name }}</dd>
+                    <dt class="col-5 col-md-4">Nhận phòng</dt>
+                    <dd class="col-7 col-md-8">{{ ci.strftime('%d/%m/%Y') }}</dd>
+                    <dt class="col-5 col-md-4">Trả phòng</dt>
+                    <dd class="col-7 col-md-8">{{ co.strftime('%d/%m/%Y') }}</dd>
+                    <dt class="col-5 col-md-4">Số đêm</dt>
+                    <dd class="col-7 col-md-8">{{ nights }}</dd>
+                    <dt class="col-5 col-md-4">Số khách</dt>
+                    <dd class="col-7 col-md-8">{{ draft.guests }}</dd>
+                    <dt class="col-5 col-md-4">Người đặt</dt>
+                    <dd class="col-7 col-md-8">
+                        {{ draft.guest_name }} · {{ draft.guest_phone }} · {{ draft.guest_email }}
+                    </dd>
+                    {% if draft.note %}
+                    <dt class="col-5 col-md-4">Ghi chú</dt>
+                    <dd class="col-7 col-md-8">{{ draft.note }}</dd>
+                    {% endif %}
+                </dl>
+
+                <div class="d-flex justify-content-between align-items-center border-top pt-3 mb-3">
+                    <span class="fw-semibold">Tổng tiền</span>
+                    <span class="h4 mb-0 text-primary">{{ "{:,.0f}".format(total) }} ₫</span>
+                </div>
+
+                <form method="post" class="d-flex justify-content-between">
+                    {{ form.hidden_tag() }}
+                    <a class="btn btn-outline-secondary"
+                       href="{{ url_for('bookings.step_guest', room_id=room.id) }}">Quay lại</a>
+                    {{ form.submit(class="btn btn-success") }}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "_macros/room_card.html" import room_card %}
+{% from "_macros/pagination.html" import render_pagination %}
+
+{% block title %}Phòng – {{ hotel.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('hotels.index') }}">Trang chủ</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('hotels.detail', hotel_id=hotel.id) }}">{{ hotel.name }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Phòng</li>
+    </ol>
+</nav>
+
+<h1 class="h3 mb-3">Phòng tại {{ hotel.name }}</h1>
+
+<form method="post" action="{{ url_for('rooms.filter_post') }}" class="card card-body mb-4" novalidate>
+    {{ form.hidden_tag() }}
+    <div class="row g-2 align-items-end">
+        <div class="col-12 col-md-3">
+            {{ form.room_type_id.label(class="form-label") }}
+            {{ form.room_type_id(class="form-select") }}
+        </div>
+        <div class="col-6 col-md-2">
+            {{ form.price_min.label(class="form-label") }}
+            {{ form.price_min(class="form-control", min=0, step=100000) }}
+        </div>
+        <div class="col-6 col-md-2">
+            {{ form.price_max.label(class="form-label") }}
+            {{ form.price_max(class="form-control", min=0, step=100000) }}
+        </div>
+        <div class="col-6 col-md-2">
+            {{ form.checkin.label(class="form-label") }}
+            {{ form.checkin(class="form-control", type="date") }}
+        </div>
+        <div class="col-6 col-md-2">
+            {{ form.checkout.label(class="form-label") }}
+            {{ form.checkout(class="form-control", type="date") }}
+        </div>
+        <div class="col-6 col-md-1">
+            {{ form.guests.label(class="form-label") }}
+            {{ form.guests(class="form-control", min=1) }}
+        </div>
+        <div class="col-12 d-grid d-md-block">
+            {{ form.submit(class="btn btn-primary") }}
+            <a class="btn btn-outline-secondary" href="{{ url_for('rooms.index', hotel_id=hotel.id) }}">Xóa bộ lọc</a>
+        </div>
+    </div>
+</form>
+
+{% if has_dates %}
+<p class="text-muted small">
+    Phòng còn trống từ {{ checkin }} đến {{ checkout }} ({{ nights }} đêm).
+</p>
+{% endif %}
+
+{% if pagination.items %}
+<div class="row g-3">
+    {% for room in pagination.items %}
+    <div class="col-12 col-md-6 col-lg-4">
+        {{ room_card(room, checkin, checkout, guests, nights) }}
+    </div>
+    {% endfor %}
+</div>
+{{ render_pagination(pagination, 'rooms.index', hotel_id=hotel.id, **filters) }}
+{% else %}
+<div class="alert alert-info">Không có phòng nào phù hợp. Hãy thử đổi bộ lọc hoặc ngày ở.</div>
+{% endif %}
+{% endblock %}

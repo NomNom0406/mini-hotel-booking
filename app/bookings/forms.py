@@ -1,32 +1,34 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, IntegerField, TextAreaField, SubmitField, HiddenField
-from wtforms.validators import DataRequired, Email, Length, NumberRange, Regexp, Optional
-from wtforms.fields import DateField
+from wtforms import (
+    DateField, HiddenField, IntegerField, SelectField, StringField,
+    SubmitField, TextAreaField,
+)
+from wtforms.validators import (
+    DataRequired, Email, Length, NumberRange, Optional, Regexp,
+)
 
 
 class BookingStep1Form(FlaskForm):
-    hotel_id  = HiddenField("Hotel ID", validators=[
-        DataRequired(message="Vui lòng chọn khách sạn."),
-    ])
-    room_id   = HiddenField("Room ID", validators=[
-        DataRequired(message="Vui lòng chọn phòng."),
-    ])
-    check_in  = DateField("Ngày nhận phòng", validators=[
+    """Bước 1: chọn ngày và số khách."""
+    room_id = HiddenField()
+    hotel_id = HiddenField()
+    check_in = DateField("Ngày nhận phòng", format="%Y-%m-%d", validators=[
         DataRequired(message="Vui lòng chọn ngày nhận phòng."),
     ])
-    check_out = DateField("Ngày trả phòng", validators=[
+    check_out = DateField("Ngày trả phòng", format="%Y-%m-%d", validators=[
         DataRequired(message="Vui lòng chọn ngày trả phòng."),
     ])
-    guests = IntegerField("Số khách", validators=[
+    guests = IntegerField("Số khách", default=1, validators=[
         DataRequired(message="Vui lòng nhập số khách."),
-        NumberRange(min=1, max=10, message="Số khách từ 1 đến 10."),
+        NumberRange(min=1, message="Số khách tối thiểu là 1."),
     ])
     submit = SubmitField("Tiếp tục")
 
 
 class BookingStep2Form(FlaskForm):
-    guest_name = StringField("Họ tên khách", validators=[
-        DataRequired(message="Vui lòng nhập họ tên khách."),
+    """Bước 2: thông tin khách."""
+    guest_name = StringField("Họ tên", validators=[
+        DataRequired(message="Vui lòng nhập họ tên."),
         Length(min=2, max=100, message="Họ tên từ 2 đến 100 ký tự."),
     ])
     guest_phone = StringField("Số điện thoại", validators=[
@@ -42,17 +44,30 @@ class BookingStep2Form(FlaskForm):
         Optional(),
         Length(max=500, message="Ghi chú tối đa 500 ký tự."),
     ])
-    submit = SubmitField("Xác nhận")
+    submit = SubmitField("Tiếp tục")
 
 
 class BookingStep3Form(FlaskForm):
-    """Form xác nhận — chỉ cần CSRF token, data lấy từ session."""
-    submit = SubmitField("Đặt phòng")
+    """Bước 3: xác nhận (chỉ nút gửi + CSRF)."""
+    submit = SubmitField("Xác nhận đặt phòng")
 
 
 class CancelBookingForm(FlaskForm):
-    cancel_reason = TextAreaField("Lý do hủy", validators=[
+    cancel_reason = StringField("Lý do hủy", validators=[
         Optional(),
         Length(max=500, message="Lý do tối đa 500 ký tự."),
     ])
-    submit = SubmitField("Hủy đặt phòng")
+    submit = SubmitField("Hủy booking")
+
+
+class BookingFilterForm(FlaskForm):
+    """Bộ lọc trang /manage/bookings (POST + CSRF, rồi redirect sang GET)."""
+    hotel_id = SelectField("Khách sạn", choices=[], validators=[Optional()])
+    status = SelectField("Trạng thái", validators=[Optional()], choices=[
+        ("", "Tất cả"), ("Pending", "Chờ xác nhận"), ("Confirmed", "Đã xác nhận"),
+        ("Cancelled", "Đã hủy"), ("Completed", "Hoàn tất"),
+    ])
+    date_from = StringField("Nhận từ ngày", validators=[Optional()])
+    date_to = StringField("Nhận đến ngày", validators=[Optional()])
+    q = StringField("Từ khóa", validators=[Optional(), Length(max=100)])
+    submit = SubmitField("Lọc")

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_macros/form_field.html" import render_field %}
+{% from "_macros/form_select.html" import render_select %}
+
+{% block title %}{{ 'Sửa phòng' if room else 'Thêm phòng' }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-12 col-md-8 col-lg-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h1 class="h4 mb-3">{{ 'Sửa phòng ' ~ room.room_number if room else 'Thêm phòng' }}</h1>
+                <form method="post" novalidate>
+                    {{ form.hidden_tag() }}
+                    {{ render_select(form.hotel_id) }}
+                    {{ render_select(form.room_type_id) }}
+                    <div class="form-text mb-3">Loại phòng phải thuộc khách sạn đã chọn.</div>
+                    {{ render_field(form.room_number) }}
+                    {{ render_field(form.floor, min=1) }}
+                    <div class="d-flex justify-content-between">
+                        <a class="btn btn-outline-secondary" href="{{ url_for('rooms.admin_rooms') }}">Quay lại</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

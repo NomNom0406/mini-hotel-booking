@@ -22,7 +22,7 @@
             </tr>
         </thead>
         <tbody>
-        {% for h in hotels %}
+            {% for h in hotels %}
             {% set action_label = 'Ẩn' if h.is_active else 'Hiện' %}
             <tr>
                 <td>{{ h.name }}</td>
@@ -40,27 +40,26 @@
                     <div class="d-inline-flex gap-1">
                         {% if h.is_active %}
                         <a class="btn btn-sm btn-outline-secondary"
-                           href="{{ url_for('hotels.detail', hotel_id=h.id) }}">Xem</a>
+                            href="{{ url_for('hotels.detail', hotel_id=h.id) }}">Xem</a>
                         {% endif %}
                         <a class="btn btn-sm btn-outline-primary"
-                           href="{{ url_for('hotels.admin_edit', hotel_id=h.id) }}">Sửa</a>
-                        <form method="post"
-                              action="{{ url_for('hotels.admin_toggle', hotel_id=h.id) }}"
-                              data-confirm="{{ action_label }} khách sạn này?">
+                            href="{{ url_for('hotels.admin_edit', hotel_id=h.id) }}">Sửa</a>
+                        <form method="post" action="{{ url_for('hotels.admin_toggle', hotel_id=h.id) }}"
+                            data-confirm="{{ action_label }} khách sạn này?">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button class="btn btn-sm {{ 'btn-outline-danger' if h.is_active else 'btn-outline-success' }}"
-                                    type="submit">{{ action_label }}</button>
+                            <button
+                                class="btn btn-sm {{ 'btn-outline-danger' if h.is_active else 'btn-outline-success' }}"
+                                type="submit">{{ action_label }}</button>
                         </form>
-                        <form method="post"
-                              action="{{ url_for('hotels.admin_delete', hotel_id=h.id) }}"
-                              data-confirm="XÓA VĨNH VIỄN khách sạn {{ h.name }} cùng toàn bộ loại phòng, phòng và booking? Không thể hoàn tác.">
+                        <form method="post" action="{{ url_for('hotels.admin_delete', hotel_id=h.id) }}"
+                            data-confirm="XÓA VĨNH VIỄN khách sạn {{ h.name }} cùng toàn bộ loại phòng, phòng và booking? Không thể hoàn tác.">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button class="btn btn-sm btn-danger" type="submit">Xóa</button>
                         </form>
                     </div>
                 </td>
             </tr>
-        {% endfor %}
+            {% endfor %}
         </tbody>
     </table>
 </div>

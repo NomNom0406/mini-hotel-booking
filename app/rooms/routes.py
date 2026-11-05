@@ -1,3 +1,5 @@
+from datetime import date
+
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 
@@ -44,6 +46,11 @@ def index():
     params = {k: v for k, v in params.items() if v}
     guests = max(request.args.get("guests", 1, type=int) or 1, 1)
     ci, co = parse_dates(params.get("checkin", ""), params.get("checkout", ""))
+    if ci and ci < date.today():
+        flash("Ngày nhận không được trong quá khứ.", "warning")
+        ci = co = None
+        params.pop("checkin", None)
+        params.pop("checkout", None)
 
     pagination = list_hotel_rooms(
         hotel_id=hotel_id,

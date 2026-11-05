@@ -1,3 +1,5 @@
+from datetime import date
+
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 
@@ -77,6 +79,10 @@ def detail(hotel_id):
     guests = max(request.args.get("guests", 1, type=int) or 1, 1)
 
     ci, co = parse_dates(checkin, checkout)
+    if ci and ci < date.today():
+        flash("Ngày nhận không được trong quá khứ.", "warning")
+        ci = co = None
+        checkin = checkout = ""
     groups = get_hotel_room_groups(hotel_id, checkin, checkout, guests)
     return render_template(
         "hotels/detail.html", hotel=hotel, groups=groups,

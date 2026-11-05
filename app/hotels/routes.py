@@ -8,7 +8,7 @@ from ..rooms.services import room_type_gallery
 from ..utils.security import save_image
 from .forms import HotelForm, HotelSearchForm
 from .services import (
-    SORT_LABELS, HotelNameTaken, create_hotel, delete_image, get_amenity_choices,
+    SORT_LABELS, HotelNameTaken, create_hotel, delete_hotel, delete_image, get_amenity_choices,
     get_hotel_room_groups, get_provinces, list_hotels_admin, parse_dates,
     parse_search_args, search_hotels_page, search_query, set_hotel_active,
     update_hotel, upload_folder,
@@ -173,4 +173,15 @@ def admin_toggle(hotel_id):
     hotel = db.get_or_404(Hotel, hotel_id)
     set_hotel_active(hotel, not hotel.is_active)
     flash(f"Đã {'hiện' if hotel.is_active else 'ẩn'} khách sạn {hotel.name}.", "info")
+    return redirect(url_for("hotels.admin_list"))
+
+
+@hotels_bp.post("/admin/hotels/<int:hotel_id>/delete")
+@login_required
+@permission_required("hotel.manage")
+def admin_delete(hotel_id):
+    hotel = db.get_or_404(Hotel, hotel_id)
+    name = hotel.name
+    delete_hotel(hotel)
+    flash(f"Đã xóa khách sạn {name} cùng toàn bộ loại phòng, phòng và booking liên quan.", "info")
     return redirect(url_for("hotels.admin_list"))

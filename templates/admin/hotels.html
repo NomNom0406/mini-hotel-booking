@@ -51,6 +51,12 @@
                             <button class="btn btn-sm {{ 'btn-outline-danger' if h.is_active else 'btn-outline-success' }}"
                                     type="submit">{{ action_label }}</button>
                         </form>
+                        <form method="post"
+                              action="{{ url_for('hotels.admin_delete', hotel_id=h.id) }}"
+                              data-confirm="XÓA VĨNH VIỄN khách sạn {{ h.name }} cùng toàn bộ loại phòng, phòng và booking? Không thể hoàn tác.">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button class="btn btn-sm btn-danger" type="submit">Xóa</button>
+                        </form>
                     </div>
                 </td>
             </tr>

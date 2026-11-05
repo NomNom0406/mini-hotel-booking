@@ -2,12 +2,14 @@ import os
 from datetime import date as date_type
 
 from flask import current_app
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import contains_eager
 
 from ..extensions import db
-from ..models import Amenity, Booking, Hotel, Room, RoomType, hotel_amenities
+from ..models import (
+    Amenity, Booking, Hotel, Room, RoomType, hotel_amenities, room_type_amenities,
+)
 from ..utils.dates import nights_between
 
 BLOCKING_STATUSES = ("Pending", "Confirmed")  # chỉ booking ở các trạng thái này giữ phòng
@@ -351,3 +353,46 @@ def set_hotel_active(hotel, active):
         db.session.rollback()
         raise
     return hotel
+
+
+
+def delete_hotel(hotel):
+    """Xóa khách sạn cùng toàn bộ dữ liệu liên quan trong MỘT transaction.
+
+    Thứ tự: booking của các phòng, liên kết tiện nghi của loại phòng, phòng,
+    loại phòng, liên kết tiện nghi của khách sạn, rồi khách sạn. Có lỗi thì rollback.
+    Sau khi commit mới xóa ảnh upload (tên trần) của khách sạn và các loại phòng;
+    ảnh có đường dẫn con (ảnh seed, ảnh trong thư mục) không bị đụng tới.
+    """
+    hotel_id = hotel.id
+    images = [hotel.image_filename] + [
+        name for (name,) in db.session.execute(
+            select(RoomType.image_filename).where(RoomType.hotel_id == hotel_id)
+        ).all()
+    ]
+    room_ids = select(Room.id).where(Room.hotel_id == hotel_id)
+    type_ids = select(RoomType.id).where(RoomType.hotel_id == hotel_id)
+    try:
+        db.session.execute(
+            delete(Booking).where(Booking.room_id.in_(room_ids))
+            .execution_options(synchronize_session=False))
+        db.session.execute(
+            delete(room_type_amenities)
+            .where(room_type_amenities.c.room_type_id.in_(type_ids)))
+        db.session.execute(
+            delete(Room).where(Room.hotel_id == hotel_id)
+            .execution_options(synchronize_session=False))
+        db.session.execute(
+            delete(RoomType).where(RoomType.hotel_id == hotel_id)
+            .execution_options(synchronize_session=False))
+        db.session.execute(
+            delete(hotel_amenities).where(hotel_amenities.c.hotel_id == hotel_id))
+        db.session.execute(
+            delete(Hotel).where(Hotel.id == hotel_id)
+            .execution_options(synchronize_session=False))
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    for name in images:
+        delete_image(name)

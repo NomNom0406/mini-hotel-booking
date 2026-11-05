@@ -40,6 +40,9 @@ class HotelSearchForm(FlaskForm):
             except ValueError:
                 field.errors.append(f"Ngày {label} không đúng định dạng.")
 
+        if "checkin" in parsed and parsed["checkin"] < date.today():
+            self.checkin.errors.append("Ngày nhận không được trong quá khứ.")
+
         if len(parsed) == 2 and parsed["checkout"] <= parsed["checkin"]:
             self.checkout.errors.append("Ngày trả phải sau ngày nhận.")
 

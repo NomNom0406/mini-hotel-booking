@@ -116,11 +116,13 @@
         url += "?hotel_id=" + encodeURIComponent(root.dataset.hotel);
     }
 
-    fetch(url, { credentials: "same-origin", headers: { "Accept": "application/json" } })
-        .then(function (resp) {
-            if (!resp.ok) { throw new Error("HTTP " + resp.status); }
-            return resp.json();
+    apiFetch(url)
+        .then(function (result) {
+            if (!result.ok) {
+                showError((result.error && result.error.message) || "Không tải được số liệu biểu đồ.");
+                return;
+            }
+            render(result.data);
         })
-        .then(render)
         .catch(function () { showError("Không tải được số liệu biểu đồ."); });
 })();

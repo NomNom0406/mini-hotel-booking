@@ -10,8 +10,9 @@
     </a>
 </div>
 
+{# calendar.js chặn submit/click của form này và tải lại lưới bằng AJAX; khi JS tắt vẫn dùng GET như cũ #}
 <form method="get" action="{{ url_for('bookings.manage_calendar') }}"
-      class="card card-body mb-3">
+      class="card card-body mb-3" id="cal-form">
     <div class="row g-2 align-items-end">
         <div class="col-12 col-md-5">
             <label class="form-label" for="hotel_id">Khách sạn</label>
@@ -29,9 +30,9 @@
             <button class="btn btn-primary" type="submit">Xem</button>
         </div>
         <div class="col-12 col-md-2 d-flex gap-1">
-            <a class="btn btn-outline-secondary flex-fill"
+            <a class="btn btn-outline-secondary flex-fill" id="cal-prev"
                href="{{ url_for('bookings.manage_calendar', hotel_id=hotel_id, month=prev_month) }}">‹</a>
-            <a class="btn btn-outline-secondary flex-fill"
+            <a class="btn btn-outline-secondary flex-fill" id="cal-next"
                href="{{ url_for('bookings.manage_calendar', hotel_id=hotel_id, month=next_month) }}">›</a>
         </div>
     </div>
@@ -53,5 +54,6 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
 <script src="{{ url_for('static', filename='js/calendar.js') }}"></script>
 {% endblock %}

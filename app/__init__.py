@@ -40,38 +40,40 @@ def create_app(env: str | None = None) -> Flask:
 
 
 def _register_error_handlers(app: Flask) -> None:
-    from flask import render_template, request, jsonify
+    from flask import render_template, request
+
+    from .api.errors import error_response
 
     @app.errorhandler(400)
     def bad_request(e):
         if request.path.startswith("/api/"):
-            return jsonify(error={"code": 400, "message": "Bad request"}), 400
+            return error_response(400, "Yêu cầu không hợp lệ.")
         return render_template("errors/400_csrf.html"), 400
 
     @app.errorhandler(403)
     def forbidden(e):
         if request.path.startswith("/api/"):
-            return jsonify(error={"code": 403, "message": "Forbidden"}), 403
+            return error_response(403, "Bạn không có quyền thực hiện thao tác này.")
         return render_template("errors/403.html"), 403
 
     @app.errorhandler(404)
     def not_found(e):
         if request.path.startswith("/api/"):
-            return jsonify(error={"code": 404, "message": "Not found"}), 404
+            return error_response(404, "Không tìm thấy tài nguyên.")
         return render_template("errors/404.html"), 404
 
     @app.errorhandler(413)
     def too_large(e):
         from flask import flash, redirect, url_for
         if request.path.startswith("/api/"):
-            return jsonify(error={"code": 413, "message": "Payload too large"}), 413
+            return error_response(413, "Tệp tải lên quá lớn (tối đa 2 MB).")
         flash("Tệp tải lên quá lớn (tối đa 2 MB).", "danger")
         return redirect(request.referrer or url_for("hotels.index"))
 
     @app.errorhandler(500)
     def internal_error(e):
         if request.path.startswith("/api/"):
-            return jsonify(error={"code": 500, "message": "Internal server error"}), 500
+            return error_response(500, "Lỗi hệ thống, vui lòng thử lại sau.")
         return render_template("errors/500.html"), 500
 
 

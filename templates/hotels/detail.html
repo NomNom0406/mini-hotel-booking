@@ -1,16 +1,35 @@
 {% extends "base.html" %}
+{% from "_macros/media.html" import img_src %}
 
 {% block title %}{{ hotel.name }}{% endblock %}
 
 {% block content %}
 <div class="row g-4 mb-4">
     <div class="col-12 col-lg-5">
-        {% if hotel.image_filename %}
-        <img src="{{ url_for('static', filename='uploads/' ~ hotel.image_filename) }}"
-             class="img-fluid rounded" alt="{{ hotel.name }}">
+        {% if gallery|length > 1 %}
+        <div id="hotel-gallery" class="carousel slide rounded overflow-hidden" data-bs-ride="carousel" data-bs-interval="3500">
+            <div class="carousel-inner">
+                {% for photo in gallery %}
+                <div class="carousel-item{{ ' active' if loop.first else '' }}">
+                    <img src="{{ img_src(photo) }}" class="d-block w-100"
+                        alt="{{ hotel.name }} – ảnh {{ loop.index }}" style="height: 260px; object-fit: cover;">
+                </div>
+                {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#hotel-gallery" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Ảnh trước</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#hotel-gallery" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Ảnh sau</span>
+            </button>
+        </div>
+        {% elif hotel.image_filename %}
+        <img src="{{ img_src(hotel.image_filename) }}" class="img-fluid rounded" alt="{{ hotel.name }}">
         {% else %}
-        <div class="bg-light rounded d-flex align-items-center justify-content-center fs-1"
-             style="height: 260px;">🏨</div>
+        <div class="bg-light rounded d-flex align-items-center justify-content-center fs-1" style="height: 260px;">🏨
+        </div>
         {% endif %}
     </div>
     <div class="col-12 col-lg-7">
@@ -28,31 +47,37 @@
     </div>
 </div>
 
-<form method="get" action="{{ url_for('hotels.detail', hotel_id=hotel.id) }}"
-      class="card card-body mb-4">
-    <div class="row g-3 align-items-end">
-        <div class="col-6 col-md-4">
-            <label class="form-label" for="checkin">Ngày nhận</label>
-            <input class="form-control" type="date" id="checkin" name="checkin" value="{{ checkin }}">
+{# Form kiểm tra phòng trống – vừa GET (fallback) vừa AJAX qua availability.js #}
+<div class="card card-body mb-4">
+    {# input hidden truyền hotel_id cho availability.js #}
+    <input type="hidden" id="avail-hotel-id" value="{{ hotel.id }}">
+    <form method="get" action="{{ url_for('hotels.detail', hotel_id=hotel.id) }}">
+        <div class="row g-3 align-items-end">
+            <div class="col-6 col-md-4">
+                <label class="form-label" for="avail-checkin">Ngày nhận</label>
+                <input class="form-control" type="date" id="avail-checkin" name="checkin" value="{{ checkin }}">
+            </div>
+            <div class="col-6 col-md-4">
+                <label class="form-label" for="avail-checkout">Ngày trả</label>
+                <input class="form-control" type="date" id="avail-checkout" name="checkout" value="{{ checkout }}">
+            </div>
+            <div class="col-6 col-md-2">
+                <label class="form-label" for="avail-guests">Số khách</label>
+                <input class="form-control" type="number" min="1" id="avail-guests" name="guests" value="{{ guests }}">
+            </div>
+            <div class="col-6 col-md-2 d-grid">
+                <button class="btn btn-outline-primary" type="submit" id="avail-submit">Kiểm tra</button>
+            </div>
         </div>
-        <div class="col-6 col-md-4">
-            <label class="form-label" for="checkout">Ngày trả</label>
-            <input class="form-control" type="date" id="checkout" name="checkout" value="{{ checkout }}">
-        </div>
-        <div class="col-6 col-md-2">
-            <label class="form-label" for="guests">Số khách</label>
-            <input class="form-control" type="number" min="1" id="guests" name="guests" value="{{ guests }}">
-        </div>
-        <div class="col-6 col-md-2 d-grid">
-            <button class="btn btn-outline-primary" type="submit">Kiểm tra phòng trống</button>
-        </div>
-    </div>
-</form>
+    </form>
+    {# Vùng kết quả AJAX – availability.js ghi vào đây #}
+    <div id="avail-result" class="mt-2"></div>
+</div>
 
 <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
     <h2 class="h4 mb-0">Phòng {% if has_dates %}còn trống{% endif %}</h2>
     <a class="btn btn-outline-primary"
-       href="{{ url_for('rooms.index', hotel_id=hotel.id, checkin=checkin, checkout=checkout, guests=guests) }}">
+        href="{{ url_for('rooms.index', hotel_id=hotel.id, checkin=checkin, checkout=checkout, guests=guests) }}">
         Xem tất cả phòng và lọc
     </a>
 </div>
@@ -75,8 +100,7 @@
             <div class="border rounded p-2 d-flex align-items-center gap-2">
                 <span>Phòng {{ room.room_number }} (tầng {{ room.floor }})</span>
                 {% if not current_user.is_authenticated or current_user.role == 'customer' %}
-                <a class="btn btn-sm btn-primary"
-                   href="{{ url_for('bookings.step_dates', room_id=room.id,
+                <a class="btn btn-sm btn-primary" href="{{ url_for('bookings.step_dates', room_id=room.id,
                                     checkin=checkin, checkout=checkout, guests=guests) }}">Đặt phòng</a>
                 {% endif %}
             </div>
@@ -90,4 +114,9 @@
     {% if has_dates %}Không còn phòng phù hợp trong khoảng ngày này.{% else %}Khách sạn chưa có phòng.{% endif %}
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/availability.js') }}"></script>
 {% endblock %}

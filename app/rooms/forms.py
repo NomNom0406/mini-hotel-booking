@@ -52,7 +52,7 @@ class RoomTypeAdminForm(FlaskForm):
     ])
     base_price = DecimalField("Giá mỗi đêm (₫)", places=0, validators=[
         DataRequired(message="Vui lòng nhập giá."),
-        NumberRange(min=1, message="Giá phải lớn hơn 0."),
+        NumberRange(min=1, max=100000000, message="Giá phải từ 1 đến 100.000.000 ₫."),
     ])
     capacity = IntegerField("Sức chứa (người)", validators=[
         DataRequired(message="Vui lòng nhập sức chứa."),

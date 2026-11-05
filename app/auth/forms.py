@@ -6,7 +6,7 @@ PASSWORD_RULE = Regexp(
     r"^(?=.*[A-Za-z])(?=.*\d).+$",
     message="Mật khẩu phải gồm cả chữ và số.",
 )
-PHONE_RULE = Regexp(r"^[0-9]{10}$", message="Số điện thoại phải đúng 10 chữ số.")
+PHONE_RULE = Regexp(r"^0[0-9]{9}$", message="Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng số 0.")
 
 
 class LoginForm(FlaskForm):

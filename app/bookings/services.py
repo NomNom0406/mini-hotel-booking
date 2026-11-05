@@ -9,7 +9,7 @@ from sqlalchemy.orm.exc import StaleDataError
 
 from ..extensions import db
 from ..models import Booking, Room
-from ..utils.dates import nights_between
+from ..utils.dates import MAX_NIGHTS, nights_between
 
 
 class RoomUnavailable(ValueError):
@@ -68,6 +68,8 @@ def create_booking(user_id, room_id, check_in, check_out, guests,
             raise ValueError("Ngày nhận phòng không được trong quá khứ.")
         if check_out <= check_in:
             raise ValueError("Ngày trả phòng phải sau ngày nhận phòng.")
+        if (check_out - check_in).days > MAX_NIGHTS:
+            raise ValueError(f"Mỗi lần đặt tối đa {MAX_NIGHTS} đêm.")
         if guests > room.room_type.capacity:
             raise ValueError("Số khách vượt quá sức chứa của phòng.")
         if _room_has_conflict(room_id, check_in, check_out):
@@ -153,9 +155,11 @@ def _parse_date(value):
 
 
 def list_bookings(hotel_id=None, status=None, date_from=None, date_to=None,
-                  q=None, page=1, per_page=10):
+                  q=None, user_id=None, page=1, per_page=10):
     """Danh sách booking cho nhân viên: lọc + phân trang (order_by ổn định)."""
     stmt = select(Booking).join(Room, Booking.room_id == Room.id)
+    if user_id:
+        stmt = stmt.where(Booking.user_id == user_id)
     if hotel_id:
         stmt = stmt.where(Room.hotel_id == hotel_id)
     if status:
@@ -223,3 +227,25 @@ def get_calendar_data(hotel_id: int, month_start: date) -> dict:
             for r in rooms
         ],
     }
+
+
+
+def update_booking_info(booking, actor, changes):
+    """Chủ booking sửa guest_name, guest_phone, note khi còn Pending.
+
+    changes: dict chứa một số khóa trong {guest_name, guest_phone, note}.
+    PermissionError: không phải chủ booking. ValueError: booking không còn Pending.
+    """
+    if booking.user_id != actor.id:
+        raise PermissionError("Bạn không có quyền sửa booking này.")
+    if booking.status != "Pending":
+        raise ValueError("Chỉ sửa được booking đang chờ xác nhận.")
+    try:
+        for key in ("guest_name", "guest_phone", "note"):
+            if key in changes:
+                setattr(booking, key, changes[key])
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    return booking

@@ -24,7 +24,7 @@
                 <form method="post" novalidate>
                     {{ form.hidden_tag() }}
                     {{ render_field(form.guest_name, autocomplete="name") }}
-                    {{ render_field(form.guest_phone, inputmode="numeric", maxlength="10") }}
+                    {{ render_field(form.guest_phone, inputmode="numeric", maxlength="10", pattern="0[0-9]{9}", title="10 chữ số, bắt đầu bằng số 0") }}
                     {{ render_field(form.guest_email, autocomplete="email") }}
                     {{ render_field(form.note, rows=3) }}
                     <div class="d-flex justify-content-between">

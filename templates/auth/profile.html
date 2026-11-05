@@ -13,7 +13,7 @@
                 <form method="post" novalidate>
                     {{ form.hidden_tag() }}
                     {{ render_field(form.full_name) }}
-                    {{ render_field(form.phone, inputmode="numeric", maxlength="10") }}
+                    {{ render_field(form.phone, inputmode="numeric", maxlength="10", pattern="0[0-9]{9}", title="10 chữ số, bắt đầu bằng số 0") }}
                     <div class="d-grid">{{ form.submit(class="btn btn-primary") }}</div>
                 </form>
                 <a class="small" href="{{ url_for('auth.change_password') }}">Đổi mật khẩu</a>

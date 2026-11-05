@@ -32,6 +32,8 @@
 
 <div class="row g-4">
     <aside class="col-12 col-lg-3">
+        {# Form GET dùng để Áp dụng bộ lọc (fallback không JS);
+           hotel_search.js đọc các input này để gọi /api/hotels trực tiếp #}
         <form method="get" action="{{ url_for('hotels.search_get') }}" class="card card-body">
             {% for key in ('province', 'checkin', 'checkout') %}
             {% if params[key] %}<input type="hidden" name="{{ key }}" value="{{ params[key] }}">{% endif %}
@@ -39,7 +41,12 @@
             {% if params.guests > 1 %}<input type="hidden" name="guests" value="{{ params.guests }}">{% endif %}
 
             <h2 class="h6">Sắp xếp</h2>
-            <select class="form-select mb-3" name="sort" aria-label="Sắp xếp">
+            {# data-* truyền context cho hotel_search.js #}
+            <select class="form-select mb-3" name="sort" id="filter-sort" aria-label="Sắp xếp"
+                data-province="{{ params.province or '' }}"
+                data-checkin="{{ params.checkin or '' }}"
+                data-checkout="{{ params.checkout or '' }}"
+                data-guests="{{ params.guests or 1 }}">
                 {% for value, label in sorts.items() %}
                 <option value="{{ value }}" {{ 'selected' if params.sort == value else '' }}>{{ label }}</option>
                 {% endfor %}
@@ -49,27 +56,33 @@
             <div class="row g-2 mb-3">
                 <div class="col-6">
                     <input class="form-control" type="number" min="0" step="100000" name="min_price"
-                           placeholder="Từ" aria-label="Giá từ" value="{{ params.min_price if params.min_price is not none else '' }}">
+                           id="filter-min-price" placeholder="Từ" aria-label="Giá từ"
+                           value="{{ params.min_price if params.min_price is not none else '' }}">
                 </div>
                 <div class="col-6">
                     <input class="form-control" type="number" min="0" step="100000" name="max_price"
-                           placeholder="Đến" aria-label="Giá đến" value="{{ params.max_price if params.max_price is not none else '' }}">
+                           id="filter-max-price" placeholder="Đến" aria-label="Giá đến"
+                           value="{{ params.max_price if params.max_price is not none else '' }}">
                 </div>
             </div>
 
             <h2 class="h6">Hạng sao</h2>
-            <select class="form-select mb-3" name="stars" aria-label="Hạng sao">
-                <option value="">Tất cả</option>
+            <div class="mb-3">
                 {% for n in (2, 3, 4, 5) %}
-                <option value="{{ n }}" {{ 'selected' if params.stars == n else '' }}>Từ {{ n }} sao trở lên</option>
+                <div class="form-check">
+                    <input class="form-check-input filter-star" type="checkbox" name="stars"
+                           id="star-{{ n }}" value="{{ n }}"
+                           {{ 'checked' if params.stars == n else '' }}>
+                    <label class="form-check-label" for="star-{{ n }}">Từ {{ n }} sao trở lên</label>
+                </div>
                 {% endfor %}
-            </select>
+            </div>
 
             <h2 class="h6">Tiện nghi</h2>
             <div class="mb-3">
                 {% for value, label in amenities %}
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="amenity"
+                    <input class="form-check-input filter-amenity" type="checkbox" name="amenity"
                            id="amenity-{{ value }}" value="{{ value }}"
                            {{ 'checked' if value in params.amenities else '' }}>
                     <label class="form-check-label" for="amenity-{{ value }}">{{ label }}</label>
@@ -89,21 +102,40 @@
     <section class="col-12 col-lg-9">
         <h1 class="h4 mb-3">
             {% if params.province %}Khách sạn tại {{ params.province }}{% else %}Tất cả khách sạn{% endif %}
-            <small class="text-muted">({{ pagination.total }} kết quả)</small>
+            – <span id="result-count">{{ pagination.total }} kết quả</span>
         </h1>
 
-        {% if pagination.items %}
-        <div class="row g-3">
-            {% for h in pagination.items %}
-            <div class="col-12 col-md-6 col-xl-4">
-                {{ hotel_card(h, prices.get(h.id), params.checkin, params.checkout, params.guests) }}
+        {# hotel_search.js vẽ lại #hotel-list-wrap khi dùng AJAX #}
+        <div id="hotel-list-wrap">
+            <div class="loading-spinner">
+                <span class="spinner-inline" style="font-size:2rem;color:var(--primary);"></span>
             </div>
-            {% endfor %}
+
+            {% if pagination.items %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+                {% for h in pagination.items %}
+                <div class="col">
+                    {{ hotel_card(h, prices.get(h.id), params.checkin, params.checkout, params.guests) }}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-3">
+                <div class="col-12 text-center py-5 text-muted">
+                    Không có khách sạn nào phù hợp. Hãy thử nới bộ lọc hoặc đổi ngày.
+                </div>
+            </div>
+            {% endif %}
         </div>
-        {{ render_pagination(pagination, 'hotels.search_get', **query) }}
-        {% else %}
-        <div class="alert alert-info">Không có khách sạn nào phù hợp. Hãy thử nới bộ lọc hoặc đổi ngày.</div>
-        {% endif %}
+
+        <div id="pagination-wrap" class="mt-3">
+            {{ render_pagination(pagination, 'hotels.search_get', **query) }}
+        </div>
     </section>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/hotel_search.js') }}"></script>
 {% endblock %}

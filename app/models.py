@@ -3,7 +3,7 @@
 from datetime import datetime
 from flask_login import UserMixin
 from sqlalchemy import (
-    Column, Integer, String, UnicodeText, Boolean, DateTime, Date, Numeric,
+    Column, Integer, String, Unicode, UnicodeText, Boolean, DateTime, Date, Numeric,
     ForeignKey, Enum, UniqueConstraint, CheckConstraint, Index
 )
 from sqlalchemy.orm import relationship
@@ -67,11 +67,11 @@ class Hotel(db.Model):
 
     id             = Column(Integer, primary_key=True)
     name           = Column(UnicodeText(150), nullable=False)
-    province       = Column(UnicodeText(80),  nullable=False)
+    province       = Column(UnicodeText(80), nullable=False)
     address        = Column(UnicodeText(255), nullable=False)
     star_rating    = Column(Integer, nullable=False, default=3)
-    description    = Column(UnicodeText,      nullable=True)
-    image_filename = Column(String(255),      nullable=True)
+    description    = Column(UnicodeText, nullable=True)
+    image_filename = Column(Unicode(255), nullable=True)
     map_url = Column(String(500), nullable=True)
     is_active      = Column(Boolean, nullable=False, default=True)
     created_at     = Column(DateTime, nullable=False, default=datetime.utcnow)
@@ -95,10 +95,10 @@ class RoomType(db.Model):
     id             = Column(Integer, primary_key=True)
     hotel_id       = Column(Integer, ForeignKey("hotels.id"), nullable=False)
     name           = Column(UnicodeText(100), nullable=False)
-    description    = Column(UnicodeText,      nullable=True)
-    base_price     = Column(Numeric(12, 2),   nullable=False)
+    description    = Column(UnicodeText, nullable=True)
+    base_price     = Column(Numeric(12, 2), nullable=False)
     capacity       = Column(Integer, nullable=False, default=2)
-    image_filename = Column(String(255),      nullable=True)
+    image_filename = Column(Unicode(255), nullable=True)
     __table_args__ = (
         UniqueConstraint("hotel_id", "name", name="uq_room_types_hotel_name"),
         CheckConstraint(base_price > 0, name="base_price_positive"),

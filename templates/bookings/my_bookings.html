@@ -11,26 +11,41 @@
     <table class="table table-hover align-middle">
         <thead>
             <tr>
-                <th>Mã</th><th>Khách sạn / Phòng</th><th>Nhận</th><th>Trả</th>
-                <th class="text-end">Tổng tiền</th><th>Trạng thái</th><th></th>
+                <th>Mã</th>
+                <th>Khách sạn / Phòng</th>
+                <th>Nhận</th>
+                <th>Trả</th>
+                <th class="text-end">Tổng tiền</th>
+                <th>Trạng thái</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
-        {% for b in bookings %}
-            <tr id="booking-{{ b.id }}">
+            {% for b in bookings %}
+            {# data-booking-id dùng bởi my_bookings.js #}
+            <tr data-booking-id="{{ b.id }}">
                 <td>{{ b.code }}</td>
                 <td>{{ b.room.hotel.name }}<br>
-                    <small class="text-muted">Phòng {{ b.room.room_number }}</small></td>
+                    <small class="text-muted">Phòng {{ b.room.room_number }}</small>
+                </td>
                 <td>{{ b.check_in.strftime('%d/%m/%Y') }}</td>
                 <td>{{ b.check_out.strftime('%d/%m/%Y') }}</td>
                 <td class="text-end">{{ "{:,.0f}".format(b.total_price) }} ₫</td>
-                <td>{{ status_badge(b.status) }}
+                <td class="td-status">
+                    {{ status_badge(b.status) }}
                     {% if b.status == 'Cancelled' and b.cancel_reason %}
                     <br><small class="text-muted">{{ b.cancel_reason }}</small>
                     {% endif %}
                 </td>
-                <td class="text-end">
+                <td class="text-end" style="min-width:120px;">
+                    {% if b.status == 'Pending' %}
+                    {# Nút mở form sửa thông tin – AJAX #}
+                    <button class="btn btn-sm btn-outline-secondary btn-edit-booking mb-1"
+                            type="button">✏️ Sửa</button>
+                    {% endif %}
+
                     {% if b.status in ('Pending', 'Confirmed') %}
+                    {# Hủy vẫn dùng form POST + CSRF theo pipeline #}
                     <form method="post" action="{{ url_for('bookings.cancel', booking_id=b.id) }}"
                           onsubmit="return confirm('Hủy booking {{ b.code }}?');">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -39,12 +54,49 @@
                     {% endif %}
                 </td>
             </tr>
-        {% endfor %}
+
+            {# Form sửa thông tin (Pending) – ẩn, mở bằng JS #}
+            {% if b.status == 'Pending' %}
+            <tr data-booking-id="{{ b.id }}" class="table-light">
+                <td colspan="7">
+                    <div class="edit-form-wrap" style="display:none;">
+                        <div class="row g-2 align-items-end p-1">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label small mb-1">Họ tên khách</label>
+                                <input type="text" class="form-control form-control-sm" name="guest_name"
+                                       value="{{ b.guest_name }}" maxlength="100">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small mb-1">Điện thoại</label>
+                                <input type="text" class="form-control form-control-sm" name="guest_phone"
+                                       value="{{ b.guest_phone }}" maxlength="10" pattern="0[0-9]{9}" title="10 chữ số, bắt đầu bằng số 0">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small mb-1">Ghi chú</label>
+                                <textarea class="form-control form-control-sm" name="note"
+                                          rows="1" maxlength="500">{{ b.note or '' }}</textarea>
+                            </div>
+                            <div class="col-12 col-md-2 d-flex gap-1">
+                                <button type="button" class="btn btn-sm btn-primary btn-save-edit">Lưu</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary btn-cancel-edit">Hủy</button>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
         </tbody>
     </table>
 </div>
 {% else %}
 <p class="text-muted">Bạn chưa có booking nào.
-    <a href="{{ url_for('hotels.index') }}">Tìm khách sạn</a></p>
+    <a href="{{ url_for('hotels.index') }}">Tìm khách sạn</a>
+</p>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/my_bookings.js') }}"></script>
 {% endblock %}

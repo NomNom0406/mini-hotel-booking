@@ -1,0 +1,558 @@
+/* =========================================================
+   Mini Hotel Booking – style.css
+   Bootstrap 5 là nền, file này chỉ ghi đè chỗ cần thiết
+   ========================================================= */
+
+/* ---------- Màu chủ đạo ---------- */
+:root {
+    --primary: #1a6b4a;
+    --primary-dark: #145238;
+    --primary-light: #e8f5ee;
+    --accent: #f4a235;
+    --accent-dark: #d4881a;
+    --text-muted-custom: #6c757d;
+    --border-radius-card: 0.75rem;
+}
+
+/* ---------- Toàn cục ---------- */
+body {
+    font-family:
+        "Segoe UI",
+        system-ui,
+        -apple-system,
+        sans-serif;
+    background-color: #f8f9fa;
+    color: #212529;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* ---------- Navbar ---------- */
+.navbar {
+    background-color: var(--primary) !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.3rem;
+    color: #fff !important;
+}
+
+.navbar-brand span {
+    color: var(--accent);
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.88) !important;
+    font-weight: 500;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    color: #fff !important;
+}
+
+.navbar-toggler-icon {
+    filter: invert(1);
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    border-radius: 0.5rem;
+}
+
+/* ---------- Hero / trang chủ ---------- */
+.hero-section {
+    background: linear-gradient(135deg, var(--primary) 0%, #2e9e6e 100%);
+    color: #fff;
+    padding: 4rem 0 3.5rem;
+}
+
+.hero-section h1 {
+    font-size: 2.4rem;
+    font-weight: 700;
+}
+
+.hero-section p {
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+/* Ô tìm kiếm trang chủ */
+.search-card {
+    background: #fff;
+    border-radius: var(--border-radius-card);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+    padding: 2rem;
+}
+
+.search-card .form-label {
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--text-muted-custom);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.search-card .form-control,
+.search-card .form-select {
+    border-radius: 0.5rem;
+    border-color: #dee2e6;
+    padding: 0.6rem 0.9rem;
+}
+
+.search-card .btn-search {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.05rem;
+    padding: 0.65rem 2rem;
+    border-radius: 0.5rem;
+    transition: background 0.2s;
+}
+
+.search-card .btn-search:hover {
+    background: var(--accent-dark);
+}
+
+/* ---------- Thẻ khách sạn ---------- */
+.hotel-card {
+    border: none;
+    border-radius: var(--border-radius-card);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+    transition:
+        transform 0.18s,
+        box-shadow 0.18s;
+    overflow: hidden;
+    height: 100%;
+}
+
+.hotel-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.13);
+}
+
+.hotel-card img {
+    height: 200px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.hotel-card .card-img-placeholder {
+    height: 200px;
+    background: linear-gradient(135deg, #e8f5ee, #c8e6da);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+}
+
+.hotel-card .card-body {
+    padding: 1.1rem 1.2rem;
+}
+
+.hotel-card .hotel-name {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 0.2rem;
+    color: #212529;
+}
+
+.hotel-card .hotel-province {
+    font-size: 0.85rem;
+    color: var(--text-muted-custom);
+}
+
+.hotel-card .price-from {
+    font-size: 0.8rem;
+    color: var(--text-muted-custom);
+}
+
+.hotel-card .price-value {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.star-rating {
+    color: var(--accent);
+    font-size: 0.85rem;
+}
+
+/* ---------- Thẻ phòng ---------- */
+.room-card {
+    border: none;
+    border-radius: var(--border-radius-card);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+    transition:
+        transform 0.18s,
+        box-shadow 0.18s;
+    overflow: hidden;
+    height: 100%;
+}
+
+.room-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.12);
+}
+
+.room-card img {
+    height: 180px;
+    object-fit: cover;
+    width: 100%;
+}
+
+.room-card .card-img-placeholder {
+    height: 180px;
+    background: linear-gradient(135deg, #f0f4f8, #dce8ef);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5rem;
+}
+
+/* ---------- Badge trạng thái booking ---------- */
+.badge-pending {
+    background-color: #ffc107;
+    color: #212529;
+}
+
+.badge-confirmed {
+    background-color: #198754;
+    color: #fff;
+}
+
+.badge-cancelled {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.badge-completed {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+/* ---------- Sidebar bộ lọc ---------- */
+.filter-sidebar {
+    background: #fff;
+    border-radius: var(--border-radius-card);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    padding: 1.5rem;
+}
+
+.filter-sidebar .filter-title {
+    font-weight: 700;
+    font-size: 1rem;
+    border-bottom: 2px solid var(--primary-light);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+    color: var(--primary);
+}
+
+/* ---------- Nút chính ---------- */
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus {
+    background-color: var(--primary-dark);
+    border-color: var(--primary-dark);
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary);
+    border-color: var(--primary);
+}
+
+/* ---------- Trang đặt phòng (steps) ---------- */
+.booking-steps {
+    display: flex;
+    justify-content: center;
+    gap: 0;
+    margin-bottom: 2rem;
+}
+
+.booking-step {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+    color: var(--text-muted-custom);
+    font-weight: 500;
+}
+
+.booking-step.active {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.booking-step .step-circle {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #dee2e6;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.8rem;
+}
+
+.booking-step.active .step-circle {
+    background: var(--primary);
+    color: #fff;
+}
+
+.booking-step.done .step-circle {
+    background: #198754;
+    color: #fff;
+}
+
+.booking-step-divider {
+    width: 60px;
+    height: 2px;
+    background: #dee2e6;
+    align-self: center;
+}
+
+/* ---------- Dashboard cards ---------- */
+.stat-card {
+    border: none;
+    border-radius: var(--border-radius-card);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.07);
+    padding: 1.25rem 1.5rem;
+}
+
+.stat-card .stat-icon {
+    font-size: 2rem;
+    opacity: 0.8;
+}
+
+.stat-card .stat-value {
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+
+.stat-card .stat-label {
+    font-size: 0.82rem;
+    color: var(--text-muted-custom);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* ---------- Bảng quản lý ---------- */
+.table-manage th {
+    background-color: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.table-manage td {
+    vertical-align: middle;
+}
+
+/* ---------- Lịch booking ---------- */
+.calendar-wrap {
+    overflow-x: auto;
+}
+
+.calendar-table th,
+.calendar-table td {
+    font-size: 0.78rem;
+    padding: 0.3rem 0.4rem;
+    white-space: nowrap;
+    text-align: center;
+    border: 1px solid #dee2e6;
+}
+
+.calendar-table th {
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-weight: 600;
+}
+
+.cal-pending {
+    background: #fff3cd;
+}
+
+.cal-confirmed {
+    background: #d1e7dd;
+}
+
+.cal-cancelled {
+    background: #f8d7da;
+}
+
+.cal-completed {
+    background: #e2e3e5;
+}
+
+/* ---------- Toast container ---------- */
+#toast-container {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.toast-item {
+    min-width: 280px;
+    max-width: 380px;
+    background: #212529;
+    color: #fff;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1.1rem;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    animation: toast-in 0.25s ease;
+}
+
+.toast-item.toast-success {
+    background: #198754;
+}
+
+.toast-item.toast-danger {
+    background: #dc3545;
+}
+
+.toast-item.toast-warning {
+    background: #856404;
+}
+
+@keyframes toast-in {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* ---------- Inline spinner ---------- */
+.spinner-inline {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: -0.1em;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ---------- Loading overlay cho danh sách hotel ---------- */
+#hotel-list-wrap {
+    position: relative;
+    min-height: 120px;
+}
+
+#hotel-list-wrap.loading::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 0.5rem;
+    z-index: 10;
+}
+
+#hotel-list-wrap .loading-spinner {
+    display: none;
+}
+
+#hotel-list-wrap.loading .loading-spinner {
+    display: flex;
+    position: absolute;
+    inset: 0;
+    align-items: center;
+    justify-content: center;
+    z-index: 11;
+    font-size: 2rem;
+    color: var(--primary);
+}
+
+/* ---------- Availability indicator ---------- */
+.availability-indicator {
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.4rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.availability-indicator.available {
+    background: #d1e7dd;
+    color: #0a3622;
+}
+
+.availability-indicator.unavailable {
+    background: #f8d7da;
+    color: #58151c;
+}
+
+.availability-indicator.checking {
+    background: #fff3cd;
+    color: #664d03;
+}
+
+/* ---------- Footer ---------- */
+footer {
+    background: var(--primary-dark);
+    color: rgba(255, 255, 255, 0.75);
+    font-size: 0.875rem;
+    padding: 1.5rem 0;
+    margin-top: auto;
+}
+
+footer a {
+    color: rgba(255, 255, 255, 0.88);
+}
+
+footer a:hover {
+    color: #fff;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 768px) {
+    .hero-section h1 {
+        font-size: 1.7rem;
+    }
+
+    .search-card {
+        padding: 1.25rem;
+    }
+
+    .booking-step-divider {
+        width: 30px;
+    }
+}

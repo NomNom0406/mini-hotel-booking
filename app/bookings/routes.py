@@ -233,8 +233,7 @@ def manage_bookings():
     )
     return render_template("manage/bookings.html", pagination=pagination,
                            filters={k: v for k, v in filters.items() if v},
-                           filter_form=_filter_form(**filters),
-                           status_form=BookingStatusForm())
+                           filter_form=_filter_form(**filters))
 
 
 @bookings_bp.post("/manage/bookings/filter")

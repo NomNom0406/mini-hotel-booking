@@ -9,7 +9,7 @@ from sqlalchemy.orm.exc import StaleDataError
 
 from ..extensions import db
 from ..models import Booking, Room
-from ..utils.dates import nights_between
+from ..utils.dates import MAX_NIGHTS, nights_between
 
 
 class RoomUnavailable(ValueError):
@@ -68,6 +68,8 @@ def create_booking(user_id, room_id, check_in, check_out, guests,
             raise ValueError("Ngày nhận phòng không được trong quá khứ.")
         if check_out <= check_in:
             raise ValueError("Ngày trả phòng phải sau ngày nhận phòng.")
+        if (check_out - check_in).days > MAX_NIGHTS:
+            raise ValueError(f"Mỗi lần đặt tối đa {MAX_NIGHTS} đêm.")
         if guests > room.room_type.capacity:
             raise ValueError("Số khách vượt quá sức chứa của phòng.")
         if _room_has_conflict(room_id, check_in, check_out):

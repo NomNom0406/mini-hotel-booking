@@ -5,7 +5,7 @@ from flask_login import login_required, current_user
 
 from ..models import Booking, Room
 from ..extensions import db
-from ..utils.dates import nights_between, has_conflict
+from ..utils.dates import MAX_NIGHTS, nights_between, has_conflict
 from ..utils.security import sanitize
 from ..decorators import booking_owner_or_staff, roles_required, permission_required
 from ..admin.forms import BookingStatusForm
@@ -86,6 +86,9 @@ def step_dates(room_id):
             return render_template("bookings/step1_dates.html", form=form, room=room)
         if co <= ci:
             flash("Ngày trả phòng phải sau ngày nhận phòng.", "danger")
+            return render_template("bookings/step1_dates.html", form=form, room=room)
+        if (co - ci).days > MAX_NIGHTS:
+            flash(f"Mỗi lần đặt tối đa {MAX_NIGHTS} đêm.", "danger")
             return render_template("bookings/step1_dates.html", form=form, room=room)
         if form.guests.data > room.room_type.capacity:
             flash(f"Phòng này tối đa {room.room_type.capacity} khách.", "danger")

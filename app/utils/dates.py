@@ -1,5 +1,7 @@
 from datetime import date
 
+MAX_NIGHTS = 30  # mỗi lần đặt tối đa 30 đêm
+
 def nights_between(check_in: date, check_out: date) -> int:
     """Trả về số đêm giữ check_in và check_out"""
     delta = check_out - check_in

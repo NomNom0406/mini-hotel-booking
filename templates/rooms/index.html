@@ -17,6 +17,8 @@
 
 <form method="post" action="{{ url_for('rooms.filter_post') }}" class="card card-body mb-4" novalidate>
     {{ form.hidden_tag() }}
+    {# availability.js đọc hotel_id từ đây; không có name nên không gửi lên server #}
+    <input type="hidden" id="avail-hotel-id" value="{{ hotel.id }}">
     <div class="row g-2 align-items-end">
         <div class="col-12 col-md-3">
             {{ form.room_type_id.label(class="form-label") }}
@@ -32,18 +34,22 @@
         </div>
         <div class="col-6 col-md-2">
             {{ form.checkin.label(class="form-label") }}
-            {{ form.checkin(class="form-control", type="date") }}
+            {{ form.checkin(class="form-control", type="date", id="avail-checkin") }}
         </div>
         <div class="col-6 col-md-2">
             {{ form.checkout.label(class="form-label") }}
-            {{ form.checkout(class="form-control", type="date") }}
+            {{ form.checkout(class="form-control", type="date", id="avail-checkout") }}
         </div>
         <div class="col-6 col-md-1">
             {{ form.guests.label(class="form-label") }}
-            {{ form.guests(class="form-control", min=1) }}
+            {{ form.guests(class="form-control", min=1, id="avail-guests") }}
+        </div>
+        <div class="col-12">
+            {# availability.js ghi kết quả còn/hết phòng vào đây #}
+            <div id="avail-result" class="availability-indicator" aria-live="polite"></div>
         </div>
         <div class="col-12 d-grid d-md-block">
-            {{ form.submit(class="btn btn-primary") }}
+            {{ form.submit(class="btn btn-primary", id="avail-submit") }}
             <a class="btn btn-outline-secondary" href="{{ url_for('rooms.index', hotel_id=hotel.id) }}">Xóa bộ lọc</a>
         </div>
     </div>
@@ -67,4 +73,9 @@
 {% else %}
 <div class="alert alert-info">Không có phòng nào phù hợp. Hãy thử đổi bộ lọc hoặc ngày ở.</div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/availability.js') }}"></script>
 {% endblock %}

@@ -100,6 +100,10 @@ def parse_search_args(args):
             errors["dates"] = ("Ngày không hợp lệ: cần đủ cả ngày nhận và ngày trả, "
                                "ngày trả phải sau ngày nhận.")
             checkin = checkout = ""
+        elif ci < date_type.today():
+            errors["dates"] = "Ngày nhận không được trong quá khứ."
+            ci = co = None
+            checkin = checkout = ""
 
     guests = _int_arg(args, "guests", errors, 1, 20) or 1
     min_price = _int_arg(args, "min_price", errors, 0)

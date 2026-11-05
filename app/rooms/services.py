@@ -1,3 +1,6 @@
+import os
+
+from flask import current_app
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import contains_eager
@@ -342,3 +345,62 @@ def delete_amenity(amenity):
     except Exception:
         db.session.rollback()
         raise
+
+
+
+
+def list_available_rooms(ci, co, guests=1, hotel_id=None, room_type_id=None, max_price=None):
+    """Phòng trống trong [ci, co) cho API: phòng và khách sạn đang hoạt động, đủ sức chứa."""
+    stmt = (
+        select(Room)
+        .join(RoomType, Room.room_type_id == RoomType.id)
+        .join(Hotel, Room.hotel_id == Hotel.id)
+        .options(contains_eager(Room.room_type), contains_eager(Room.hotel))
+        .where(Room.is_active == True, Hotel.is_active == True,
+               RoomType.capacity >= guests, Room.id.not_in(_booked_room_ids(ci, co)))
+    )
+    if hotel_id:
+        stmt = stmt.where(Room.hotel_id == hotel_id)
+    if room_type_id:
+        stmt = stmt.where(RoomType.id == room_type_id)
+    if max_price is not None:
+        stmt = stmt.where(RoomType.base_price <= max_price)
+    stmt = stmt.order_by(RoomType.base_price, Hotel.name, Room.room_number, Room.id)
+    return db.session.execute(stmt).scalars().all()
+
+
+_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".webp", ".avif")
+
+
+def room_type_gallery(image_filename):
+    """Danh sách ảnh của một loại phòng, đọc từ thư mục chứa ảnh bìa.
+
+    Ảnh bìa (image_filename) luôn đứng đầu; các ảnh còn lại cùng thư mục xếp theo tên file.
+    Ảnh upload qua admin (tên trần, không có thư mục riêng) chỉ trả đúng ảnh đó.
+    Trả list đường dẫn tương đối so với static/ (đưa thẳng vào macro img_src).
+    """
+    if not image_filename:
+        return []
+    cover = image_filename.replace("\\", "/")
+    if not cover.startswith("uploads/"):
+        cover = "uploads/" + cover
+    folder_rel = os.path.dirname(cover)
+    if folder_rel in ("", "uploads"):
+        return [cover]
+
+    static_root = os.path.abspath(current_app.static_folder)
+    uploads_root = os.path.join(static_root, "uploads")
+    folder = os.path.abspath(os.path.join(static_root, folder_rel))
+    try:
+        # Chặn đường dẫn thoát khỏi static/uploads (ví dụ chứa "..")
+        if os.path.commonpath([folder, uploads_root]) != uploads_root:
+            return [cover]
+        names = sorted(
+            n for n in os.listdir(folder)
+            if n.lower().endswith(_IMAGE_EXTENSIONS) and os.path.isfile(os.path.join(folder, n))
+        )
+    except (OSError, ValueError):
+        return [cover]
+
+    cover_name = os.path.basename(cover)
+    return [cover] + [folder_rel + "/" + n for n in names if n != cover_name]

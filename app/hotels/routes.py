@@ -4,6 +4,7 @@ from flask_login import login_required
 from ..decorators import permission_required
 from ..extensions import db
 from ..models import Hotel
+from ..rooms.services import room_type_gallery
 from ..utils.security import save_image
 from .forms import HotelForm, HotelSearchForm
 from .services import (
@@ -83,6 +84,7 @@ def detail(hotel_id):
         checkin=ci.isoformat() if ci else "",
         checkout=co.isoformat() if co else "",
         guests=guests,
+        gallery=room_type_gallery(hotel.image_filename),
     )
 
 

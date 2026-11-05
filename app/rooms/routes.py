@@ -8,6 +8,7 @@ from ..models import Amenity, Hotel, Room, RoomType
 from ..utils.dates import nights_between
 from ..utils.security import save_image
 from .forms import AmenityForm, RoomAdminForm, RoomFilterForm, RoomTypeAdminForm
+from .services import room_type_gallery
 from .services import (
     AmenityNameTaken, RoomNumberTaken, RoomTypeNameTaken, RuleViolation,
     all_hotel_choices, create_amenity, create_room, create_room_type,
@@ -105,6 +106,7 @@ def detail(room_id):
         total=room.room_type.base_price * nights if nights else None,
         available=room_is_free(room.id, ci, co) if ci and co else None,
         fits=guests <= room.room_type.capacity,
+        gallery=room_type_gallery(room.room_type.image_filename),
     )
 
 

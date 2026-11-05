@@ -29,19 +29,29 @@
             <div class="card-body p-4">
                 <form method="post" novalidate>
                     {{ form.hidden_tag() }}
+                    {# availability.js đọc hai giá trị này; không có name nên không gửi lên server #}
+                    <input type="hidden" id="avail-hotel-id" value="{{ room.hotel_id }}">
+                    <input type="hidden" id="avail-room-id" value="{{ room.id }}">
                     <div class="row">
-                        <div class="col-12 col-md-6">{{ render_field(form.check_in) }}</div>
-                        <div class="col-12 col-md-6">{{ render_field(form.check_out) }}</div>
+                        <div class="col-12 col-md-6">{{ render_field(form.check_in, id="avail-checkin") }}</div>
+                        <div class="col-12 col-md-6">{{ render_field(form.check_out, id="avail-checkout") }}</div>
                     </div>
-                    {{ render_field(form.guests, min=1, max=room.room_type.capacity) }}
+                    {{ render_field(form.guests, min=1, max=room.room_type.capacity, id="avail-guests") }}
+                    {# availability.js ghi kết quả còn/hết phòng vào đây #}
+                    <div id="avail-result" class="availability-indicator mb-3" aria-live="polite"></div>
                     <div class="d-flex justify-content-between">
                         <a class="btn btn-outline-secondary"
                            href="{{ url_for('hotels.detail', hotel_id=room.hotel_id) }}">Quay lại</a>
-                        {{ form.submit(class="btn btn-primary") }}
+                        {{ form.submit(class="btn btn-primary", id="avail-submit") }}
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+<script src="{{ url_for('static', filename='js/availability.js') }}"></script>
 {% endblock %}

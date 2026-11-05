@@ -1,7 +1,9 @@
+{% from "_macros/media.html" import img_src %}
+
 {% macro hotel_card(hotel, price_from, checkin='', checkout='', guests=1) %}
 <div class="card h-100 shadow-sm">
     {% if hotel.image_filename %}
-    <img src="{{ url_for('static', filename='uploads/' ~ hotel.image_filename) }}"
+    <img src="{{ img_src(hotel.image_filename) }}"
          class="card-img-top" alt="{{ hotel.name }}" style="height: 180px; object-fit: cover;">
     {% else %}
     <div class="bg-light d-flex align-items-center justify-content-center fs-1"

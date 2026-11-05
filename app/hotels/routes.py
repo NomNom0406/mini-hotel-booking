@@ -7,7 +7,7 @@ from ..decorators import permission_required
 from ..extensions import db
 from ..models import Hotel
 from ..rooms.services import room_type_gallery
-from ..utils.security import save_image
+from ..utils.security import save_uploaded_image
 from .forms import HotelForm, HotelSearchForm
 from .services import (
     SORT_LABELS, HotelNameTaken, create_hotel, delete_hotel, delete_image, get_amenity_choices,
@@ -108,15 +108,7 @@ def _hotel_data(form):
 
 
 def _save_uploaded_image(form):
-    """(tên file | None, hợp lệ). Không chọn ảnh thì (None, True); ảnh sai thì (None, False) kèm lỗi ở form."""
-    file = form.image.data
-    if not file or not getattr(file, "filename", ""):
-        return None, True
-    filename = save_image(file, upload_folder())
-    if filename is None:
-        form.image.errors.append("Ảnh không hợp lệ (png, jpg, webp, tối đa 2 MB).")
-        return None, False
-    return filename, True
+    return save_uploaded_image(form, upload_folder())
 
 
 @hotels_bp.get("/admin/hotels")

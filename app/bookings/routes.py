@@ -176,6 +176,10 @@ def step_confirm(room_id):
             flash("Phòng vừa được đặt bởi người khác, vui lòng chọn phòng khác.", "danger")
             session.pop("booking_draft", None)
             return redirect(url_for("hotels.index"))
+        except ValueError as e:
+            flash(str(e), "danger")
+            session.pop("booking_draft", None)
+            return redirect(url_for("bookings.step_dates", room_id=room_id))
 
     return render_template("bookings/step3_confirm.html",
                            form=form, room=room, draft=draft,

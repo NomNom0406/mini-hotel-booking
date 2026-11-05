@@ -31,7 +31,7 @@
                     {% else %}
                         {{ render_field(form.full_name, autocomplete="name") }}
                         {{ render_field(form.email, autocomplete="off") }}
-                        {{ render_field(form.phone, inputmode="numeric", maxlength="10") }}
+                        {{ render_field(form.phone, inputmode="numeric", maxlength="10", pattern="0[0-9]{9}", title="10 chữ số, bắt đầu bằng số 0") }}
                         {{ render_field(form.password, autocomplete="new-password") }}
                         {{ render_field(form.confirm_password, autocomplete="new-password") }}
                     {% endif %}

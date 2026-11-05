@@ -33,7 +33,7 @@ class BookingStep2Form(FlaskForm):
     ])
     guest_phone = StringField("Số điện thoại", validators=[
         DataRequired(message="Vui lòng nhập số điện thoại."),
-        Regexp(r"^[0-9]{10}$", message="Số điện thoại phải đúng 10 chữ số."),
+        Regexp(r"^0[0-9]{9}$", message="Số điện thoại phải gồm đúng 10 chữ số và bắt đầu bằng số 0."),
     ])
     guest_email = StringField("Email", validators=[
         DataRequired(message="Vui lòng nhập email."),

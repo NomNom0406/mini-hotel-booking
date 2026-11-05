@@ -30,7 +30,7 @@
                         {{ form.image.label(class="form-label") }}
                         {% if hotel and hotel.image_filename %}
                         <div class="mb-2">
-                            <img src="{{ url_for('static', filename='uploads/' ~ hotel.image_filename) }}"
+                            <img src="{{ url_for('static', filename=hotel.image_filename if hotel.image_filename.startswith('uploads/') else 'uploads/' ~ hotel.image_filename) }}"
                                  alt="{{ hotel.name }}" class="img-thumbnail" style="max-height: 140px;">
                             <div class="form-text">Chọn ảnh mới để thay ảnh hiện tại.</div>
                         </div>

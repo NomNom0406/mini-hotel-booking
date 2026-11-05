@@ -7,7 +7,7 @@ from ..utils.security import sanitize
 from .errors import ApiError
 
 STATUSES = ("Pending", "Confirmed", "Cancelled", "Completed")
-PHONE_RE = re.compile(r"^[0-9]{10}$")
+PHONE_RE = re.compile(r"^0[0-9]{9}$")
 EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 
 
@@ -89,7 +89,7 @@ def _name(value):
 
 def _phone(value):
     if not isinstance(value, str) or not PHONE_RE.match(value.strip()):
-        raise ValueError("Số điện thoại phải đúng 10 chữ số.")
+        raise ValueError("Số điện thoại phải đúng 10 chữ số, và bắt đầu bằng số 0.")
     return value.strip()
 
 

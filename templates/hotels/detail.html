@@ -35,7 +35,12 @@
     <div class="col-12 col-lg-7">
         <h1 class="h3">{{ hotel.name }}</h1>
         <p class="text-warning mb-1" aria-label="{{ hotel.star_rating }} sao">{{ '★' * hotel.star_rating }}</p>
-        <p class="text-muted mb-2">📍 {{ hotel.address }}, {{ hotel.province }}</p>
+        <p class="text-muted mb-2">📍 {{ hotel.address }}, {{ hotel.province }}
+            {% if hotel.map_url and hotel.map_url.startswith(('http://', 'https://')) %}
+            <a class="ms-2 small" href="{{ hotel.map_url }}" target="_blank"
+               rel="noopener noreferrer">Xem bản đồ</a>
+            {% endif %}
+        </p>
         {% if hotel.description %}<p>{{ hotel.description }}</p>{% endif %}
         {% if hotel.amenities %}
         <p class="mb-0">

@@ -47,3 +47,18 @@ def save_image(file, upload_folder: str) -> str | None:
     os.makedirs(upload_folder, exist_ok=True)
     file.save(os.path.join(upload_folder, filename))
     return filename
+
+
+def save_uploaded_image(form, upload_folder: str):
+    """Lấy ảnh từ form.image, lưu và trả (filename | None, ok).
+
+    Không chọn ảnh thì (None, True); ảnh sai thì (None, False) kèm lỗi ở form.
+    """
+    file = form.image.data
+    if not file or not getattr(file, "filename", ""):
+        return None, True
+    filename = save_image(file, upload_folder)
+    if filename is None:
+        form.image.errors.append("Ảnh không hợp lệ (png, jpg, webp, tối đa 2 MB).")
+        return None, False
+    return filename, True

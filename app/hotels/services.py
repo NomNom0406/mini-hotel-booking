@@ -345,7 +345,7 @@ def update_hotel(hotel, data, amenity_ids, image_filename=None):
 
 
 def set_hotel_active(hotel, active):
-    """Ẩn/hiện khách sạn. Không có thao tác xóa: khách sạn đã có booking chỉ được ẩn."""
+    """Ẩn/hiện khách sạn."""
     try:
         hotel.is_active = active
         db.session.commit()

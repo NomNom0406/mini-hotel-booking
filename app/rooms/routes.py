@@ -8,7 +8,7 @@ from ..extensions import db
 from ..hotels.services import delete_image, get_amenity_choices, parse_dates, upload_folder
 from ..models import Amenity, Hotel, Room, RoomType
 from ..utils.dates import nights_between
-from ..utils.security import save_image
+from ..utils.security import save_uploaded_image
 from .forms import AmenityForm, RoomAdminForm, RoomFilterForm, RoomTypeAdminForm
 from .services import room_type_gallery
 from .services import (
@@ -120,15 +120,7 @@ def detail(room_id):
 # ─── Admin: dùng chung ──────────────────────────────────────────────────────
 
 def _save_uploaded_image(form):
-    """(tên file | None, hợp lệ). Không chọn ảnh thì (None, True); ảnh sai thì (None, False) kèm lỗi ở form."""
-    file = form.image.data
-    if not file or not getattr(file, "filename", ""):
-        return None, True
-    filename = save_image(file, upload_folder())
-    if filename is None:
-        form.image.errors.append("Ảnh không hợp lệ (png, jpg, webp, tối đa 2 MB).")
-        return None, False
-    return filename, True
+    return save_uploaded_image(form, upload_folder())
 
 
 # ─── Admin: phòng ───────────────────────────────────────────────────────────

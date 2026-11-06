@@ -148,10 +148,14 @@ def run_seed():
     def img(hotel_slug, room_folder, filename):
         return f"uploads/rooms/{hotel_slug}/{room_folder}/{filename}"
 
+    def cover(hotel_slug):
+        return f"uploads/hotels/{hotel_slug}/cover.jpg"
+
     hotels_data = [
         # ── ĐÀ LẠT ──────────────────────────────────────────────────── #
         {
             "name": "Hưng Nguyên Valley Đà Lạt",
+            "slug": "hung-nguyen-valley",
             "province": "Đà Lạt",
             "address": "20 Vạn Hạnh, Phường 8, Đà Lạt, Lâm Đồng",
             "star_rating": 2,
@@ -188,6 +192,7 @@ def run_seed():
         },
         {
             "name": "Mơ Stay – Forest",
+            "slug": "mo-stay-forest",
             "province": "Đà Lạt",
             "address": "Đường Hoa Hồng, Phường 4, Đà Lạt, Lâm Đồng",
             "star_rating": 4,
@@ -226,6 +231,7 @@ def run_seed():
         # ── PHÚ QUỐC ─────────────────────────────────────────────────── #
         {
             "name": "JW Marriott Phu Quoc Emerald Bay Resort & Spa",
+            "slug": "jw-marriott-phu-quoc",
             "province": "Phú Quốc",
             "address": "Bãi Khem, An Thới, Phú Quốc, Kiên Giang",
             "star_rating": 5,
@@ -278,6 +284,7 @@ def run_seed():
         },
         {
             "name": "Sol by Meliá Phu Quoc",
+            "slug": "sol-melia-phu-quoc",
             "province": "Phú Quốc",
             "address": "Khu 1, Bãi Trường, Dương Tơ, Phú Quốc, Kiên Giang",
             "star_rating": 5,
@@ -332,6 +339,7 @@ def run_seed():
         # ── ĐÀ NẴNG ──────────────────────────────────────────────────── #
         {
             "name": "Doha Central Bliss Danang Hotel",
+            "slug": "doha-central-danang",
             "province": "Đà Nẵng",
             "address": "193 Nguyễn Văn Linh, Nam Dương, Hải Châu, Đà Nẵng",
             "star_rating": 3,
@@ -369,6 +377,7 @@ def run_seed():
         },
         {
             "name": "Sea Vibe Boutique Hotel",
+            "slug": "sea-vibe-danang",
             "province": "Đà Nẵng",
             "address": "6-8 Phạm Thiều, Phước Mỹ, Sơn Trà, Đà Nẵng",
             "star_rating": 3,
@@ -406,6 +415,7 @@ def run_seed():
         # ── HỒ CHÍ MINH ──────────────────────────────────────────────── #
         {
             "name": "Liberty Central Saigon Riverside",
+            "slug": "liberty-central-saigon",
             "province": "Hồ Chí Minh",
             "address": "17 Tôn Đức Thắng, Bến Nghé, Quận 1, TP. Hồ Chí Minh",
             "star_rating": 4,
@@ -450,6 +460,7 @@ def run_seed():
         },
         {
             "name": "Park Hyatt Saigon",
+            "slug": "park-hyatt-saigon",
             "province": "Hồ Chí Minh",
             "address": "2 Công trường Lam Sơn, Bến Nghé, Quận 1, TP. Hồ Chí Minh",
             "star_rating": 5,
@@ -496,6 +507,7 @@ def run_seed():
         # ── HÀ NỘI ───────────────────────────────────────────────────── #
         {
             "name": "Hanoi Emerald Waters Hotel & Spa",
+            "slug": "hanoi-emerald-waters",
             "province": "Hà Nội",
             "address": "47 Lò Sũ, Lý Thái Tổ, Hoàn Kiếm, Hà Nội",
             "star_rating": 4,
@@ -524,6 +536,7 @@ def run_seed():
         },
         {
             "name": "Sofitel Legend Metropole Hanoi",
+            "slug": "sofitel-metropole-hanoi",
             "province": "Hà Nội",
             "address": "15 Ngô Quyền, Hoàn Kiếm, Hà Nội",
             "star_rating": 5,
@@ -585,6 +598,7 @@ def run_seed():
             name=hd["name"], province=hd["province"],
             address=hd["address"], star_rating=hd["star_rating"],
             map_url=hd["map_url"], description=hd["description"],
+            image_filename=cover(hd["slug"]),
             is_active=True,
         )
         h.amenities = hd["hotel_amenities"]

@@ -1,0 +1,54 @@
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "${DB_PASSWORD}"
+      MSSQL_PID: "Express"
+    ports:
+      - "1433:1433"
+    volumes:
+      - mssql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"${DB_PASSWORD}\" -Q \"SELECT 1\" -No -C || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  init_db:
+    build: .
+    command: python docker/init_db.py
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_USER: sa
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  web:
+    build: .
+    command: >
+      sh -c "python -m flask db upgrade &&
+             python -m flask seed &&
+             python -m gunicorn -w 1 -b 0.0.0.0:5000 wsgi:app"
+    env_file: .env
+    environment:
+      FLASK_APP: wsgi.py
+      FLASK_ENV: production
+      DB_HOST: db
+      DB_USER: sa
+      DB_PASSWORD: ${DB_PASSWORD}
+      SESSION_COOKIE_SECURE: "0"
+    ports:
+      - "5000:5000"
+    volumes:
+      - uploads:/app/static/uploads
+    depends_on:
+      init_db:
+        condition: service_completed_successfully
+
+volumes:
+  mssql_data:
+  uploads:

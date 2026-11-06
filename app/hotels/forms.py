@@ -1,7 +1,7 @@
 from datetime import date
 
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileAllowed, FileField
+from flask_wtf.file import FileAllowed, FileField, MultipleFileField
 from wtforms import (
     IntegerField, SelectField, SelectMultipleField, StringField,
     SubmitField, TextAreaField,
@@ -76,10 +76,13 @@ class HotelForm(FlaskForm):
         URL(message="Link Google Maps không đúng định dạng."),
         Length(max=500, message="Link tối đa 500 ký tự."),
     ])
-    image = FileField("Ảnh đại diện", validators=[
+    image = FileField("Ảnh bìa (ảnh đầu tiên trong carousel)", validators=[
         Optional(),
         FileAllowed(["png", "jpg", "jpeg", "webp"],
                     message="Chỉ chấp nhận ảnh png, jpg, webp."),
+    ])
+    extra_images = MultipleFileField("Thêm ảnh khác (có thể chọn nhiều)", validators=[
+        Optional(),
     ])
     amenity_ids = SelectMultipleField("Tiện nghi", coerce=int, choices=[],
                                       validators=[Optional()])

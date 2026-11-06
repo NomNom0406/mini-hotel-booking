@@ -1,5 +1,5 @@
 from datetime import date
-
+import os
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import login_required
 
@@ -7,7 +7,8 @@ from ..decorators import permission_required
 from ..extensions import db
 from ..models import Hotel
 from ..rooms.services import room_type_gallery
-from ..utils.security import save_uploaded_image
+from flask import current_app
+from ..utils.security import save_image_to_folder, save_uploaded_image, slugify
 from .forms import HotelForm, HotelSearchForm
 from .services import (
     SORT_LABELS, HotelNameTaken, create_hotel, delete_hotel, delete_image, get_amenity_choices,
@@ -90,7 +91,7 @@ def detail(hotel_id):
         checkin=ci.isoformat() if ci else "",
         checkout=co.isoformat() if co else "",
         guests=guests,
-        gallery=room_type_gallery(hotel.image_filename),
+        gallery=_get_hotel_gallery(hotel),
     )
 
 
@@ -109,6 +110,44 @@ def _hotel_data(form):
 
 def _save_uploaded_image(form):
     return save_uploaded_image(form, upload_folder())
+
+
+_IMG_EXTS = (".png", ".jpg", ".jpeg", ".webp")
+
+
+def _hotel_folder(hotel):
+    """Thư mục ảnh của khách sạn, tương đối so với static/.
+
+    Ảnh bìa đã nằm trong thư mục con (khách sạn seed) thì dùng đúng thư mục đó;
+    ảnh bìa nằm trần ở uploads/ thì dùng uploads/hotels/<slug tên>.
+    """
+    cover = (hotel.image_filename or "").replace("\\", "/")
+    if cover:
+        if not cover.startswith("uploads/"):
+            cover = "uploads/" + cover
+        folder = os.path.dirname(cover)
+        if folder not in ("", "uploads"):
+            return folder
+    return f"uploads/hotels/{slugify(hotel.name)}"
+
+
+def _save_extra_images(form, hotel):
+    """Lưu các ảnh phụ từ form.extra_images vào thư mục khách sạn."""
+    files = form.extra_images.data
+    if not files:
+        return
+    static_root = current_app.static_folder
+    folder = _hotel_folder(hotel)
+    errors = []
+    for f in files:
+        if not getattr(f, "filename", ""):
+            continue
+        result = save_image_to_folder(f, folder, static_root)
+        if result is None:
+            errors.append(f"Ảnh '{f.filename}' không hợp lệ (png, jpg, webp, tối đa 2 MB).")
+    if errors:
+        for e in errors:
+            form.extra_images.errors.append(e)
 
 
 @hotels_bp.get("/admin/hotels")
@@ -132,9 +171,10 @@ def admin_create():
                 hotel = create_hotel(_hotel_data(form), form.amenity_ids.data,
                                      image_filename=image_filename)
             except HotelNameTaken as e:
-                delete_image(image_filename)  # tránh để lại ảnh mồ côi
+                delete_image(image_filename)
                 form.name.errors.append(str(e))
             else:
+                _save_extra_images(form, hotel)
                 flash(f"Đã thêm khách sạn {hotel.name}.", "success")
                 return redirect(url_for("hotels.admin_list"))
     return render_template("admin/hotel_form.html", form=form, hotel=None)
@@ -159,9 +199,11 @@ def admin_edit(hotel_id):
                 delete_image(image_filename)
                 form.name.errors.append(str(e))
             else:
+                _save_extra_images(form, hotel)
                 flash(f"Đã cập nhật khách sạn {hotel.name}.", "success")
                 return redirect(url_for("hotels.admin_list"))
-    return render_template("admin/hotel_form.html", form=form, hotel=hotel)
+    gallery = _get_hotel_gallery(hotel)
+    return render_template("admin/hotel_form.html", form=form, hotel=hotel, gallery=gallery)
 
 
 @hotels_bp.post("/admin/hotels/<int:hotel_id>/toggle")
@@ -183,3 +225,55 @@ def admin_delete(hotel_id):
     delete_hotel(hotel)
     flash(f"Đã xóa khách sạn {name} cùng toàn bộ loại phòng, phòng và booking liên quan.", "info")
     return redirect(url_for("hotels.admin_list"))
+
+
+def _get_hotel_gallery(hotel):
+    """Ảnh bìa đứng đầu, rồi các ảnh khác trong thư mục khách sạn (không trùng)."""
+    if not hotel or not hotel.image_filename:
+        return []
+    gallery = list(room_type_gallery(hotel.image_filename))
+    folder = _hotel_folder(hotel)
+    abs_folder = os.path.join(current_app.static_folder, folder)
+    if os.path.isdir(abs_folder):
+        for name in sorted(os.listdir(abs_folder)):
+            rel = f"{folder}/{name}"
+            if (name.lower().endswith(_IMG_EXTS) and rel not in gallery
+                    and os.path.isfile(os.path.join(abs_folder, name))):
+                gallery.append(rel)
+    return gallery
+
+
+@hotels_bp.post("/admin/hotels/<int:hotel_id>/delete-image")
+@login_required
+@permission_required("hotel.manage")
+def admin_hotel_delete_image(hotel_id):
+    """Xóa một ảnh phụ của khách sạn (không xóa ảnh bìa)."""
+    hotel = db.get_or_404(Hotel, hotel_id)
+    filename = request.form.get("filename", "").strip()
+    if not filename:
+        flash("Không tìm thấy tên file.", "danger")
+        return redirect(url_for("hotels.admin_edit", hotel_id=hotel_id))
+
+    # Không cho xóa ảnh bìa
+    cover = (hotel.image_filename or "").replace("\\", "/")
+    if not cover.startswith("uploads/"):
+        cover = "uploads/" + cover
+    if filename == cover:
+        flash("Không thể xóa ảnh bìa. Hãy upload ảnh bìa mới trước.", "warning")
+        return redirect(url_for("hotels.admin_edit", hotel_id=hotel_id))
+
+    # Chỉ xóa file trong thư mục của khách sạn này
+    from flask import current_app
+    static_root = current_app.static_folder
+    abs_path = os.path.abspath(os.path.join(static_root, filename))
+    hotel_folder = os.path.abspath(os.path.join(static_root, _hotel_folder(hotel)))
+    if os.path.commonpath([abs_path, hotel_folder]) != hotel_folder:
+        flash("Không được xóa file ngoài thư mục khách sạn.", "danger")
+        return redirect(url_for("hotels.admin_edit", hotel_id=hotel_id))
+
+    try:
+        os.remove(abs_path)
+        flash("Đã xóa ảnh.", "success")
+    except OSError:
+        flash("Không thể xóa ảnh.", "danger")
+    return redirect(url_for("hotels.admin_edit", hotel_id=hotel_id))

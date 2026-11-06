@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from flask_wtf.file import FileAllowed, FileField
+from flask_wtf.file import FileAllowed, FileField, MultipleFileField
 from wtforms import (
     DecimalField, HiddenField, IntegerField, SelectField,
     SelectMultipleField, StringField, SubmitField, TextAreaField,
@@ -58,10 +58,13 @@ class RoomTypeAdminForm(FlaskForm):
         DataRequired(message="Vui lòng nhập sức chứa."),
         NumberRange(min=1, max=20, message="Sức chứa từ 1 đến 20 người."),
     ])
-    image = FileField("Ảnh loại phòng", validators=[
+    image = FileField("Ảnh bìa (ảnh đầu tiên trong carousel)", validators=[
         Optional(),
         FileAllowed(["png", "jpg", "jpeg", "webp"],
                     message="Chỉ chấp nhận ảnh png, jpg, webp."),
+    ])
+    extra_images = MultipleFileField("Thêm ảnh khác (có thể chọn nhiều)", validators=[
+        Optional(),
     ])
     amenity_ids = SelectMultipleField("Tiện nghi", coerce=int, choices=[],
                                       validators=[Optional()])

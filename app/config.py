@@ -1,5 +1,7 @@
 import os
 from datetime import timedelta
+from urllib.parse import quote_plus
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -9,7 +11,7 @@ def _build_db_uri():
     port = os.getenv("DB_PORT", "1433")
     name = os.getenv("DB_NAME", "hotel_db")
     user = os.getenv("DB_USER", "sa")
-    pwd  = os.getenv("DB_PASSWORD", "1")
+    pwd  = quote_plus(os.getenv("DB_PASSWORD", "1"))
     return (
         f"mssql+pymssql://{user}:{pwd}@{host}:{port}/{name}"
         f"?charset=utf8"

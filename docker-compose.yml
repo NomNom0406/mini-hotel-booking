@@ -21,6 +21,8 @@ services:
     env_file: .env
     environment:
       DB_HOST: db
+      DB_USER: sa
+      DB_PASSWORD: ${DB_PASSWORD}
     depends_on:
       db:
         condition: service_healthy
@@ -30,12 +32,14 @@ services:
     command: >
       sh -c "python -m flask db upgrade &&
              python -m flask seed &&
-             gunicorn -w 1 -b 0.0.0.0:5000 wsgi:app"
+             python -m gunicorn -w 1 -b 0.0.0.0:5000 wsgi:app"
     env_file: .env
     environment:
       FLASK_APP: wsgi.py
       FLASK_ENV: production
       DB_HOST: db
+      DB_USER: sa
+      DB_PASSWORD: ${DB_PASSWORD}
       SESSION_COOKIE_SECURE: "0"
     ports:
       - "5000:5000"

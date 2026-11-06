@@ -1,9 +1,9 @@
 import os
 import re
 import sys
+from urllib.parse import quote_plus
 
 from dotenv import load_dotenv
-from sqlalchemy import engine_from_config
 from sqlalchemy_utils import create_database, database_exists
 
 load_dotenv()
@@ -19,8 +19,9 @@ _NAME_RE = re.compile(r'^[A-Za-z0-9_]+$')
 
 
 def make_url(dbname):
+    pw = quote_plus(DB_PASSWORD)
     return (
-        f"mssql+pymssql://{DB_USER}:{DB_PASSWORD}"
+        f"mssql+pymssql://{DB_USER}:{pw}"
         f"@{DB_HOST}:{DB_PORT}/{dbname}?charset=utf8"
     )
 

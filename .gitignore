@@ -31,3 +31,6 @@ htmlcov/
 # OS
 .DS_Store
 Thumbs.db
+
+# Anh upload tu giao dien admin (anh seed da commit van duoc theo doi)
+static/uploads/

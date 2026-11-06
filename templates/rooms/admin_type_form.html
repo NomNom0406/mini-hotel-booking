@@ -37,6 +37,39 @@
                     </div>
 
                     <div class="mb-3">
+                        {{ form.extra_images.label(class="form-label") }}
+                        {{ form.extra_images(class="form-control" ~ (" is-invalid" if form.extra_images.errors else ""),
+                                             multiple=True, accept=".png,.jpg,.jpeg,.webp") }}
+                        {% for err in form.extra_images.errors %}<div class="invalid-feedback">{{ err }}</div>{% endfor %}
+                        <div class="form-text">Có thể chọn nhiều ảnh cùng lúc. png, jpg hoặc webp, tối đa 2 MB mỗi ảnh.</div>
+                    </div>
+
+                    {% if room_type and gallery %}
+                    <div class="mb-3">
+                        <label class="form-label d-block">Ảnh hiện có ({{ gallery|length }})</label>
+                        <div class="row g-2">
+                            {% for path in gallery %}
+                            <div class="col-6 col-md-4">
+                                <div class="card h-100">
+                                    <img src="{{ url_for('static', filename=path) }}" alt="{{ room_type.name }}"
+                                         class="card-img-top" style="height: 100px; object-fit: cover;">
+                                    <div class="card-body p-2 text-center">
+                                        {% if loop.first %}
+                                        <span class="badge text-bg-primary">Ảnh bìa</span>
+                                        {% else %}
+                                        <button type="submit" form="del-img-{{ loop.index }}"
+                                                class="btn btn-sm btn-outline-danger">Xóa</button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <div class="form-text">Ảnh bìa không xóa được. Muốn đổi, hãy upload ảnh bìa mới ở ô phía trên.</div>
+                    </div>
+                    {% endif %}
+
+                    <div class="mb-3">
                         <label class="form-label d-block">{{ form.amenity_ids.label.text }}</label>
                         {% set selected = form.amenity_ids.data or [] %}
                         {% for value, label in form.amenity_ids.choices %}
@@ -54,6 +87,17 @@
                         {{ form.submit(class="btn btn-primary") }}
                     </div>
                 </form>
+
+                {% if room_type and gallery %}
+                {% for path in gallery %}{% if not loop.first %}
+                <form id="del-img-{{ loop.index }}" method="post"
+                      action="{{ url_for('rooms.admin_type_delete_image', type_id=room_type.id) }}"
+                      data-confirm="Xóa ảnh này?">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="filename" value="{{ path }}">
+                </form>
+                {% endif %}{% endfor %}
+                {% endif %}
             </div>
         </div>
     </div>

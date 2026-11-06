@@ -1,4 +1,5 @@
 from datetime import date
+import os
 
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import login_required
@@ -8,7 +9,8 @@ from ..extensions import db
 from ..hotels.services import delete_image, get_amenity_choices, parse_dates, upload_folder
 from ..models import Amenity, Hotel, Room, RoomType
 from ..utils.dates import nights_between
-from ..utils.security import save_uploaded_image
+from flask import current_app
+from ..utils.security import save_image_to_folder, save_uploaded_image, slugify
 from .forms import AmenityForm, RoomAdminForm, RoomFilterForm, RoomTypeAdminForm
 from .services import room_type_gallery
 from .services import (
@@ -113,7 +115,7 @@ def detail(room_id):
         total=room.room_type.base_price * nights if nights else None,
         available=room_is_free(room.id, ci, co) if ci and co else None,
         fits=guests <= room.room_type.capacity,
-        gallery=room_type_gallery(room.room_type.image_filename),
+        gallery=_get_room_type_gallery(room.room_type),
     )
 
 
@@ -121,6 +123,62 @@ def detail(room_id):
 
 def _save_uploaded_image(form):
     return save_uploaded_image(form, upload_folder())
+
+
+_IMG_EXTS = (".png", ".jpg", ".jpeg", ".webp")
+
+
+def _room_type_folder(room_type):
+    """Thư mục ảnh của loại phòng, tương đối so với static/.
+
+    Ảnh bìa đã nằm trong thư mục con (loại phòng seed) thì dùng đúng thư mục đó;
+    ảnh bìa nằm trần ở uploads/ thì dùng uploads/rooms/<slug khách sạn>/<slug loại>.
+    """
+    cover = (room_type.image_filename or "").replace("\\", "/")
+    if cover:
+        if not cover.startswith("uploads/"):
+            cover = "uploads/" + cover
+        folder = os.path.dirname(cover)
+        if folder not in ("", "uploads"):
+            return folder
+    hotel_slug = slugify(room_type.hotel.name)
+    type_slug = slugify(room_type.name)
+    return f"uploads/rooms/{hotel_slug}/{type_slug}"
+
+
+def _get_room_type_gallery(room_type):
+    """Ảnh bìa đứng đầu, rồi các ảnh khác trong thư mục loại phòng (không trùng)."""
+    if not room_type or not room_type.image_filename:
+        return []
+    gallery = list(room_type_gallery(room_type.image_filename))
+    folder = _room_type_folder(room_type)
+    abs_folder = os.path.join(current_app.static_folder, folder)
+    if os.path.isdir(abs_folder):
+        for name in sorted(os.listdir(abs_folder)):
+            rel = f"{folder}/{name}"
+            if (name.lower().endswith(_IMG_EXTS) and rel not in gallery
+                    and os.path.isfile(os.path.join(abs_folder, name))):
+                gallery.append(rel)
+    return gallery
+
+
+def _save_extra_images_room_type(form, room_type):
+    """Lưu các ảnh phụ từ form.extra_images vào thư mục loại phòng."""
+    files = form.extra_images.data
+    if not files:
+        return
+    static_root = current_app.static_folder
+    folder = _room_type_folder(room_type)
+    errors = []
+    for f in files:
+        if not getattr(f, "filename", ""):
+            continue
+        result = save_image_to_folder(f, folder, static_root)
+        if result is None:
+            errors.append(f"Ảnh '{f.filename}' không hợp lệ (png, jpg, webp, tối đa 2 MB).")
+    if errors:
+        for e in errors:
+            form.extra_images.errors.append(e)
 
 
 # ─── Admin: phòng ───────────────────────────────────────────────────────────
@@ -237,6 +295,7 @@ def admin_type_new():
                 delete_image(filename)
                 form.name.errors.append(str(e))
             else:
+                _save_extra_images_room_type(form, room_type)
                 flash(f"Đã thêm loại phòng {room_type.name}.", "success")
                 return redirect(url_for("rooms.admin_types", hotel_id=room_type.hotel_id))
     return render_template("rooms/admin_type_form.html", form=form, room_type=None)
@@ -258,9 +317,45 @@ def admin_type_edit(type_id):
                 delete_image(filename)
                 form.name.errors.append(str(e))
             else:
+                _save_extra_images_room_type(form, room_type)
                 flash(f"Đã cập nhật loại phòng {room_type.name}.", "success")
                 return redirect(url_for("rooms.admin_types", hotel_id=room_type.hotel_id))
-    return render_template("rooms/admin_type_form.html", form=form, room_type=room_type)
+    gallery = _get_room_type_gallery(room_type)
+    return render_template("rooms/admin_type_form.html", form=form, room_type=room_type,
+                           gallery=gallery)
+
+
+@rooms_bp.post("/admin/roomtypes/<int:type_id>/delete-image")
+@login_required
+@permission_required("room.manage")
+def admin_type_delete_image(type_id):
+    """Xóa một ảnh phụ của loại phòng (không xóa ảnh bìa)."""
+    room_type = db.get_or_404(RoomType, type_id)
+    filename = request.form.get("filename", "").strip()
+    if not filename:
+        flash("Không tìm thấy tên file.", "danger")
+        return redirect(url_for("rooms.admin_type_edit", type_id=type_id))
+
+    cover = (room_type.image_filename or "").replace("\\", "/")
+    if not cover.startswith("uploads/"):
+        cover = "uploads/" + cover
+    if filename == cover:
+        flash("Không thể xóa ảnh bìa. Hãy upload ảnh bìa mới trước.", "warning")
+        return redirect(url_for("rooms.admin_type_edit", type_id=type_id))
+
+    static_root = current_app.static_folder
+    abs_path = os.path.abspath(os.path.join(static_root, filename))
+    type_folder = os.path.abspath(os.path.join(static_root, _room_type_folder(room_type)))
+    if os.path.commonpath([abs_path, type_folder]) != type_folder:
+        flash("Không được xóa file ngoài thư mục loại phòng.", "danger")
+        return redirect(url_for("rooms.admin_type_edit", type_id=type_id))
+
+    try:
+        os.remove(abs_path)
+        flash("Đã xóa ảnh.", "success")
+    except OSError:
+        flash("Không thể xóa ảnh.", "danger")
+    return redirect(url_for("rooms.admin_type_edit", type_id=type_id))
 
 
 # ─── Admin: tiện nghi ───────────────────────────────────────────────────────

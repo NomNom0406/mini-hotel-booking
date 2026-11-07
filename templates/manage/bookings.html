@@ -63,6 +63,11 @@
                 <td>{{ b.code }}</td>
                 <td>{{ b.guest_name }}<br>
                     <small class="text-muted">{{ b.guest_phone }}</small>
+                    {% if b.note %}
+                    <div class="small fst-italic text-break" style="max-width:220px;">
+                        Ghi chú: {{ b.note }}
+                    </div>
+                    {% endif %}
                 </td>
                 <td>{{ b.room.hotel.name }}<br>
                     <small class="text-muted">Phòng {{ b.room.room_number }}</small>

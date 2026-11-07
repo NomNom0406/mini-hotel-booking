@@ -277,9 +277,9 @@ py -m pytest --cov=app
 
 | # | Thành viên | Phần phụ trách |
 |---|---|---|
-| 1 | (điền tên) | Nền tảng: app factory, config, models, migration, seed, Docker |
-| 2 | (điền tên) | Booking: form 3 bước, trạng thái, lịch |
-| 3 | (điền tên) | REST API, JWT, AJAX (`api.js`), dashboard |
-| 4 | (điền tên) | Đăng nhập/đăng ký, phân quyền, quản lý người dùng |
-| 5 | (điền tên) | Khách sạn: tìm kiếm, chi tiết, quản lý, upload ảnh |
-| 6 | (điền tên) | Phòng, loại phòng, tiện nghi, kiểm tra phòng trống |
+| 1 | Khưu Hải Nguyên | Nền tảng: app factory, config, models, migration, seed, Docker |
+| 2 | Khưu Hải Nguyên, Nguyễn Quốc Anh | Booking: form 3 bước, trạng thái, lịch |
+| 3 | Nguyễn Quốc Anh, Võ Ngọc Bảo Trân | REST API, JWT, AJAX (`api.js`), dashboard |
+| 4 | Nguyễn Kim Ngân | Đăng nhập/đăng ký, phân quyền, quản lý người dùng |
+| 5 | Lê Trường Thịnh | Khách sạn: tìm kiếm, chi tiết, quản lý, upload ảnh |
+| 6 | Nguyễn Minh Tiên | Phòng, loại phòng, tiện nghi, kiểm tra phòng trống |

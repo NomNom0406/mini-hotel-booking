@@ -2,6 +2,7 @@ from flask import Blueprint, flash, jsonify, redirect, render_template, request,
 from flask_login import current_user, login_required
 
 from ..auth.services import EmailTaken
+from ..bookings.services import auto_update_bookings
 from ..decorators import permission_required
 from ..extensions import db
 from ..models import User
@@ -19,6 +20,7 @@ admin_bp = Blueprint("admin", __name__)
 @permission_required('dashboard.view')
 def dashboard():
     hotel_id = request.args.get("hotel_id", type=int)
+    auto_update_bookings()
     data = get_dashboard_data(hotel_id)
     return render_template("admin/dashboard.html", data=data,
                            hotels=get_hotel_choices(), selected_hotel_id=hotel_id)
@@ -29,6 +31,7 @@ def dashboard():
 @permission_required('dashboard.view')
 def dashboard_data():
     hotel_id = request.args.get("hotel_id", type=int)
+    auto_update_bookings()
     return jsonify(get_dashboard_data(hotel_id))
 
 

@@ -249,3 +249,50 @@ def update_booking_info(booking, actor, changes):
         db.session.rollback()
         raise
     return booking
+
+
+# ─── Tự động cập nhật trạng thái ────────────────────────────────────────────
+
+AUTO_COMPLETE_AFTER_DAYS = 3
+AUTO_CANCEL_REASON = "Tự động hủy: đã qua ngày nhận phòng mà booking chưa được xác nhận."
+
+
+def auto_update_bookings(today: date | None = None, dry_run: bool = False) -> dict:
+    """Tự động cập nhật trạng thái booking (gọi khi mở các trang quản lý).
+
+    - Pending đã qua ngày nhận phòng: chuyển Cancelled kèm lý do.
+    - Confirmed đã quá ngày trả phòng AUTO_COMPLETE_AFTER_DAYS ngày: chuyển Completed.
+    Booking đã Completed hoặc Cancelled không bị đụng tới.
+    dry_run=True: chỉ trả danh sách mã booking sẽ đổi, không ghi DB.
+    """
+    today = today or date.today()
+
+    to_cancel = Booking.query.filter(
+        Booking.status == "Pending", Booking.check_in < today
+    ).all()
+    to_complete = [
+        b for b in Booking.query.filter(
+            Booking.status == "Confirmed", Booking.check_out < today
+        ).all()
+        if (today - b.check_out).days >= AUTO_COMPLETE_AFTER_DAYS
+    ]
+    result = {
+        "cancelled": [b.code for b in to_cancel],
+        "completed": [b.code for b in to_complete],
+    }
+    if dry_run or not (to_cancel or to_complete):
+        return result
+
+    try:
+        for b in to_cancel:
+            if "Cancelled" in ALLOWED_TRANSITIONS.get(b.status, set()):
+                b.status = "Cancelled"
+                b.cancel_reason = AUTO_CANCEL_REASON
+        for b in to_complete:
+            if "Completed" in ALLOWED_TRANSITIONS.get(b.status, set()):
+                b.status = "Completed"
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    return result

@@ -15,8 +15,8 @@ from .forms import (
     CancelBookingForm, BookingFilterForm,
 )
 from .services import (
-    create_booking, change_status, list_bookings, RoomUnavailable,
-    get_calendar_data, parse_month,
+    auto_update_bookings, create_booking, change_status, list_bookings,
+    RoomUnavailable, get_calendar_data, parse_month,
 )
 
 bookings_bp = Blueprint("bookings", __name__)
@@ -28,6 +28,7 @@ bookings_bp = Blueprint("bookings", __name__)
 @login_required
 def my_bookings():
     """Customer xem danh sách booking của mình."""
+    auto_update_bookings()
     bookings = (Booking.query
                 .filter_by(user_id=current_user.id)
                 .order_by(Booking.created_at.desc())
@@ -224,6 +225,7 @@ def _filter_form(**data):
 @login_required
 @roles_required("admin", "receptionist")
 def manage_bookings():
+    auto_update_bookings()
     filters = {k: request.args.get(k, "").strip() for k in _FILTER_KEYS}
     page = request.args.get("page", 1, type=int)
     pagination = list_bookings(
@@ -274,6 +276,7 @@ def update_booking_status(booking_id):
 @login_required
 @roles_required("admin", "receptionist")
 def manage_calendar():
+    auto_update_bookings()
     hotels = get_hotel_choices()
     hotel_id = request.args.get("hotel_id", type=int) or (hotels[0][0] if hotels else None)
     month = parse_month(request.args.get("month", ""))
@@ -293,5 +296,6 @@ def manage_calendar_data():
     if not hotel_id:
         return jsonify(error={"code": 400, "message": "Thiếu hotel_id",
                               "fields": {"hotel_id": "Bắt buộc"}}), 400
+    auto_update_bookings()
     month = parse_month(request.args.get("month", ""))
     return jsonify(data=get_calendar_data(hotel_id, month))

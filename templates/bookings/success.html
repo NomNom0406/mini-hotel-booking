@@ -19,7 +19,9 @@
                     {{ booking.check_out.strftime('%d/%m/%Y') }}<br>
                     Tổng tiền: {{ "{:,.0f}".format(booking.total_price) }} ₫
                 </p>
-                <p class="small">Booking đang chờ lễ tân xác nhận.</p>
+                {% if booking.status == 'Pending' %}
+                <p class="small text-muted">Booking đang chờ xác nhận. Vui lòng liên hệ lễ tân để yêu cầu xác nhận booking. Nếu qua hết ngày nhận phòng ({{ booking.check_in.strftime('%d/%m/%Y') }}) mà booking chưa được xác nhận, hệ thống sẽ tự động hủy.</p>
+                {% endif %}
                 <a class="btn btn-primary" href="{{ url_for('bookings.my_bookings') }}">Xem booking của tôi</a>
                 <a class="btn btn-outline-secondary" href="{{ url_for('hotels.index') }}">Về trang chủ</a>
             </div>

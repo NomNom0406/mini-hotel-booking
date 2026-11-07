@@ -145,9 +145,8 @@ def _save_extra_images(form, hotel):
         result = save_image_to_folder(f, folder, static_root)
         if result is None:
             errors.append(f"Ảnh '{f.filename}' không hợp lệ (png, jpg, webp, tối đa 2 MB).")
-    if errors:
-        for e in errors:
-            form.extra_images.errors.append(e)
+    for msg in errors:
+        flash(msg, "warning")
 
 
 @hotels_bp.get("/admin/hotels")

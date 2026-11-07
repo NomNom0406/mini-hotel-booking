@@ -38,6 +38,37 @@
         return span;
     }
 
+    // Các trạng thái đích hợp lệ theo ALLOWED_TRANSITIONS (khớp templates/manage/bookings.html)
+    const NEXT_OPTIONS = {
+        Pending: [["Confirmed", "Xác nhận"], ["Cancelled", "Hủy"]],
+        Confirmed: [["Completed", "Hoàn tất"], ["Cancelled", "Hủy"]],
+    };
+
+    // Dựng lại ô "Đổi trạng thái" theo trạng thái mới
+    function renderStatusControl(form, select, reasonInput, newStatus) {
+        const options = NEXT_OPTIONS[newStatus];
+        if (!options) {
+            // Cancelled / Completed: trạng thái cuối, không còn thao tác
+            const done = document.createElement("span");
+            done.className = "text-muted small";
+            done.textContent = "Đã kết thúc";
+            form.replaceWith(done);
+            return;
+        }
+        if (!select) return;
+        select.textContent = "";
+        options.forEach(function (pair) {
+            const opt = document.createElement("option");
+            opt.value = pair[0];
+            opt.textContent = pair[1];
+            select.appendChild(opt);
+        });
+        select.value = options[0][0];
+        if (reasonInput) reasonInput.value = "";
+        // chạy lại toggleReason để ẩn ô lý do
+        select.dispatchEvent(new Event("change"));
+    }
+
     document.querySelectorAll(".status-form").forEach((form) => {
         const select = form.querySelector("select[name='status']");
         const reasonWrap = form.querySelector(".reason-wrap");
@@ -97,7 +128,7 @@
                 return;
             }
 
-            // Cập nhật badge
+            // Cập nhật badge (kèm lý do hủy giống template khi F5)
             const newStatus = result.data.status;
             const row = form.closest("tr[data-booking-id]") || form.closest("tr");
             if (row) {
@@ -105,11 +136,18 @@
                 if (tdStatus) {
                     tdStatus.innerHTML = "";
                     tdStatus.appendChild(makeBadge(newStatus));
+                    if (newStatus === "Cancelled" && reason) {
+                        tdStatus.appendChild(document.createElement("br"));
+                        const small = document.createElement("small");
+                        small.className = "text-muted";
+                        small.textContent = reason;
+                        tdStatus.appendChild(small);
+                    }
                 }
             }
 
-            // Cập nhật select về trạng thái mới
-            if (select) select.value = newStatus;
+            // Dựng lại ô đổi trạng thái theo trạng thái mới
+            renderStatusControl(form, select, reasonInput, newStatus);
 
             showToast("Cập nhật trạng thái thành công.", "success");
         });

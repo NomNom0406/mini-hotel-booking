@@ -36,6 +36,9 @@
                     {% if b.status == 'Cancelled' and b.cancel_reason %}
                     <br><small class="text-muted">{{ b.cancel_reason }}</small>
                     {% endif %}
+                    {% if b.status == 'Pending' %}
+                    <br><small class="text-muted">Chờ xác nhận. Vui lòng liên hệ lễ tân.</small>
+                    {% endif %}
                 </td>
                 <td class="text-end" style="min-width:120px;">
                     {% if b.status == 'Pending' %}

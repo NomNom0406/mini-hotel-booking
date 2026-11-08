@@ -262,7 +262,6 @@ def admin_hotel_delete_image(hotel_id):
         return redirect(url_for("hotels.admin_edit", hotel_id=hotel_id))
 
     # Chỉ xóa file trong thư mục của khách sạn này
-    from flask import current_app
     static_root = current_app.static_folder
     abs_path = os.path.abspath(os.path.join(static_root, filename))
     hotel_folder = os.path.abspath(os.path.join(static_root, _hotel_folder(hotel)))

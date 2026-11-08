@@ -260,11 +260,31 @@ Gọi endpoint cần JWT mà không gửi token sẽ nhận 401.
 
 ## Chạy test
 
-Bộ test pytest đang được bổ sung. Khi hoàn tất:
+Test dùng pytest với SQLite in-memory (không cần SQL Server). Chạy toàn bộ:
 
 ```powershell
-py -m pytest --cov=app
+py -m pytest -q
 ```
+
+Đo độ phủ (luôn đo cả gói `app`):
+
+```powershell
+py -m pytest --cov=app --cov-report=term-missing -q
+```
+
+Lưu ý: không dùng `--cov` với một gói con như `--cov=app.bookings`. Cách đó từng làm fixture khởi tạo lỗi `TypeError: 'InternalTraversal' object is not callable`. Muốn xem riêng một module, lọc kết quả: `Select-String -Pattern "bookings"`.
+
+Các file test nằm trong thư mục `tests/`:
+
+| File | Nội dung |
+|---|---|
+| `conftest.py` | App test, dữ liệu mẫu, đăng nhập, tắt giới hạn đăng nhập khi test |
+| `test_models.py`, `test_no_raw_sql.py` | Model và kiểm tra không dùng SQL thô |
+| `test_permissions.py` | Phân quyền theo vai trò |
+| `test_booking_services.py`, `test_booking_routes.py` | Nghiệp vụ và route booking |
+| `test_api.py` | REST API (JWT, mã trạng thái 200/201/400/401/403/404/409) |
+| `test_dashboard_services.py`, `test_user_services.py` | Thống kê dashboard, quản lý người dùng |
+| `test_room_services.py`, `test_room_routes.py`, `room_helpers.py` | Phòng, loại phòng, tiện nghi |
 
 ## Lưu ý về SQL Server
 

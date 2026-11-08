@@ -135,10 +135,16 @@ def change_status(booking: Booking, new_status: str, actor, reason: str | None =
         if today < booking.check_out:
             raise ValueError("Chỉ hoàn tất từ ngày trả phòng trở đi.")
 
+    # Nhân viên hủy booking Confirmed từ ngày nhận phòng trở đi: khách vẫn bị tính tiền.
+    # Tính TRƯỚC khi đổi status (lúc này booking.status còn là trạng thái cũ).
+    charge = (new_status == "Cancelled" and is_staff
+              and booking.status == "Confirmed" and today >= booking.check_in)
+
     try:
         booking.status = new_status
         if new_status == "Cancelled":
             booking.cancel_reason = reason
+            booking.is_charged = charge
         db.session.commit()
     except Exception:
         db.session.rollback()

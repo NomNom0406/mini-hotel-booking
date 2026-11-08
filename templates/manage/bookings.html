@@ -80,6 +80,9 @@
                     {% if b.status == 'Cancelled' and b.cancel_reason %}
                     <br><small class="text-muted">{{ b.cancel_reason }}</small>
                     {% endif %}
+                    {% if b.status == 'Cancelled' and b.is_charged %}
+                    <br><span class="badge bg-warning text-dark">Vẫn tính tiền</span>
+                    {% endif %}
                 </td>
                 <td>
                     {% if next_statuses %}

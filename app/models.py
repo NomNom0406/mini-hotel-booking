@@ -159,6 +159,8 @@ class Booking(db.Model):
         nullable=False, default="Pending"
     )
     cancel_reason = Column(UnicodeText, nullable=True)
+    # True khi nhân viên hủy booking Confirmed từ ngày nhận phòng trở đi: vẫn tính vào doanh thu
+    is_charged    = Column(Boolean, nullable=False, default=False)
     created_at    = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at    = Column(DateTime, nullable=False, default=datetime.utcnow,
                         onupdate=datetime.utcnow)

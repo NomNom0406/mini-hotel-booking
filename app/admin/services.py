@@ -2,7 +2,7 @@
 from calendar import monthrange
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import extract, func, select
+from sqlalchemy import and_, extract, func, or_, select
 from sqlalchemy.exc import IntegrityError
 from werkzeug.security import generate_password_hash
 
@@ -51,7 +51,14 @@ def get_revenue_by_month(hotel_id=None):
 
     rows = (
         _scoped(db.session.query(year, month, func.sum(Booking.total_price)), hotel_id)
-        .filter(Booking.status.in_(REVENUE_STATUSES), Booking.check_in >= start)
+        .filter(
+            or_(
+                Booking.status.in_(REVENUE_STATUSES),
+                # hủy muộn do nhân viên (is_charged) vẫn là doanh thu
+                and_(Booking.status == "Cancelled", Booking.is_charged == True),
+            ),
+            Booking.check_in >= start,
+        )
         .group_by(year, month)
         .all()
     )

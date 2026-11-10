@@ -1,5 +1,5 @@
 def test_customer_cannot_access_admin(client, app):
-    """Customer không được vào /admin/."""
+    """Customer không được vào /admin/dashboard."""
     # Login là customer
     from tests.conftest import _get_csrf
     client.post("/auth/login", data={
@@ -8,7 +8,7 @@ def test_customer_cannot_access_admin(client, app):
         "csrf_token": _get_csrf(client, "/auth/login"),
     }, follow_redirects=True)
 
-    resp = client.get("/admin/")
+    resp = client.get("/admin/dashboard")
     assert resp.status_code == 403
 
 
@@ -56,7 +56,7 @@ def test_customer_cannot_see_others_booking(client, app):
 
 
 def test_staff_cannot_access_dashboard(app):
-    """Receptionist không có dashboard.view nên /admin/ trả 403."""
+    """Receptionist không có dashboard.view nên /admin/dashboard trả 403."""
     from tests.conftest import _get_csrf
     staff = app.test_client()
     staff.post("/auth/login", data={
@@ -65,5 +65,5 @@ def test_staff_cannot_access_dashboard(app):
         "csrf_token": _get_csrf(staff, "/auth/login"),
     }, follow_redirects=True)
 
-    resp = staff.get("/admin/")
+    resp = staff.get("/admin/dashboard")
     assert resp.status_code == 403

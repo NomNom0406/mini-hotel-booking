@@ -14,7 +14,7 @@ def is_valid_date_range(check_in: date, check_out: date) -> bool:
 
 
 def has_conflict(room_id: int, check_in: date, check_out: date,
-                 exclude_booking_id: int | None = None) -> bool:
+                exclude_booking_id: int | None = None) -> bool:
     """
     Kiểm tra phòng room_id có booking Pending/Confirmed nào
     trùng lịch với [check_in, check_out) không.

@@ -1,6 +1,6 @@
 import pytest
 from app import create_app
-from app.extensions import db as _db
+from app.extensions import db as _db, limiter
 from app.models import User, Hotel, RoomType, Room, Amenity
 from werkzeug.security import generate_password_hash
 
@@ -8,6 +8,7 @@ from werkzeug.security import generate_password_hash
 @pytest.fixture(scope="session")
 def app():
     app = create_app("testing")
+    limiter.enabled = False  # test đăng nhập nhiều lần từ cùng một IP, không để bị chặn 429
     with app.app_context():
         _db.create_all()
         _seed_test_data()
@@ -15,7 +16,7 @@ def app():
         _db.drop_all()
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="function")
 def client(app):
     return app.test_client()
 
@@ -108,3 +109,22 @@ def _seed_test_data():
         _db.session.add(r)
 
     _db.session.commit()
+
+
+
+
+@pytest.fixture(autouse=True)
+def _reset_login_state(app):
+    """Xóa người dùng đăng nhập còn sót trong g do app context dùng chung."""
+    from flask import g
+    g.pop("_login_user", None)
+    g.pop("csrf_token", None)
+    yield
+
+
+@pytest.fixture()
+def csrf_on(app):
+    """Bật CSRF cho test kiểm tra CSRF protection (TestConfig mặc định tắt)."""
+    app.config["WTF_CSRF_ENABLED"] = True
+    yield
+    app.config["WTF_CSRF_ENABLED"] = False

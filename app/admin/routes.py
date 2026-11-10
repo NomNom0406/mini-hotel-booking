@@ -23,7 +23,7 @@ def dashboard():
     auto_update_bookings()
     data = get_dashboard_data(hotel_id)
     return render_template("admin/dashboard.html", data=data,
-                           hotels=get_hotel_choices(), selected_hotel_id=hotel_id)
+                            hotels=get_hotel_choices(), selected_hotel_id=hotel_id)
 
 
 @admin_bp.get("/dashboard/data")
@@ -50,7 +50,7 @@ def user_create():
     if form.validate_on_submit():
         try:
             user = create_receptionist(form.full_name.data, form.email.data,
-                                       form.phone.data, form.password.data)
+                                        form.phone.data, form.password.data)
         except EmailTaken as e:
             form.email.errors.append(str(e))
         else:
